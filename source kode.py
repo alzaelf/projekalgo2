@@ -91,15 +91,19 @@ def register():
 
 def login():
     while True:
-        username = input("Masukkan username : ")
+        username = input("Masukkan username : ").strip()
         if cek(username) == False:
             continue
         else:
             break
-    password = input("Masukkan password : ")
+    password = input("Masukkan password : ").strip()
     bukadb = pd.read_csv(akun)
+
+    bukadb['Username'] = bukadb['Username'].astype(str).str.strip()
+    bukadb['Password'] = bukadb['Password'].astype(str).str.strip()
+
     if username in bukadb['Username'].values:
-        sebaris = bukadb[bukadb["Username"]== username]
+        sebaris = bukadb[bukadb["Username"] == username]
         if sebaris['Password'].values[0] == password:
             hiasan("Login berhasil")
             input("Tekan enter untuk melanjutkan")
