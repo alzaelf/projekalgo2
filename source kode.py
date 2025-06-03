@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import pyfiglet
 from tabulate import tabulate
+from transaction import Transaction
 
 def hiasan(apa):
     print(pyfiglet.figlet_format(apa, font='small'))
@@ -191,6 +192,9 @@ def login():
 def Menu(role, id_user, nama):
     while True:
         hiasan(f"Menu {role.capitalize()}")
+
+        transaction = Transaction(id_user)
+
         if role == "Customer":
             print(f"Halo {nama}! (ID: {id_user})")
             menu_customer = {
@@ -210,18 +214,52 @@ def Menu(role, id_user, nama):
                 4: "Ubah Data Material",
                 5: "Lihat Riwayat Transaksi Customer",
                 6: "Hapus Riwayat Transaksi Customer",
-                7: "Lihat Angkutan" 
+                7: "Lihat Angkutan",
+                8: "Logout"
                 }
             
             for key, value in menu_admin.items():
                 print(f"{key}. {value}")
 
         pilihan = input("Pilih menu: ").strip()
-        if pilihan == '2':
+        if pilihan == '1':
+            print("Data belum tersedia.")
+        
+        elif pilihan == '2':
+            if role.lower() == 'customer':
+                transaction.CreateTransaction()
+            
+            if role.lower == 'admin':
+                pass
+
+        elif pilihan == '3':
+            if role.lower() == 'customer':
+                transaction.ShowAllTransaction()
+            
+            if role.lower == 'admin':
+                pass
+
+        elif pilihan == '4':
+            if role.lower() == 'customer':
+                clear_terminal()
+                break
+            
+            if role.lower == 'admin':
+                pass
+
+        elif pilihan == '5' and role.lower() == 'admin':
+            transaction.ShowAllTransaction()
+
+        elif pilihan == '6' and role.lower() == 'admin':
+            pass
+
+        elif pilihan == '7' and role.lower() == 'admin':
+            pass
+
+        elif pilihan == '8' and role.lower() == 'admin':
             clear_terminal()
             break
-        elif pilihan == '1':
-            print("Data belum tersedia.")
+
         else:
             print("Pilihan tidak valid.")
 
