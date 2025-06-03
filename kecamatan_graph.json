@@ -16,10 +16,12 @@
     "mayang",
     "mumbulsari",
     "pakusari",
+    "panti",
     "patrang",
     "puger",
     "rambipuji",
     "semboro",
+    "silo",
     "sukorambi",
     "sukowono",
     "sumberbaru",
@@ -28,9 +30,7 @@
     "tanggul",
     "tempurejo",
     "umbulsari",
-    "wuluhan",
-    "silo",
-    "panti"
+    "wuluhan"
   ],
   "edges": [
     { "from": "ajung", "to": "jenggawah", "weight": 10.9 },
