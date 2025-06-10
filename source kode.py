@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import csv
 import pyfiglet
 from tabulate import tabulate
 from transaction import Transaction
@@ -33,12 +34,31 @@ def dicek(angka):
         return False
 
 def cari_kecamatan(nama_kecamatan):
+    hasil = []
     try:
-        data_kecamatan = pd.read_csv("kecamatan.csv")
-        return data_kecamatan[data_kecamatan['Kecamatan'].str.lower().str.contains(nama_kecamatan.lower())]
+        with open("kecamatan.csv", mode='r', encoding='utf-8') as file:
+            reader = csv.reader(file)
+            header = next(reader)
+
+            if 'Kecamatan' not in header:
+                print("Kolom 'Kecamatan' tidak ditemukan dalam file CSV.")
+                return []
+
+            index_kecamatan = header.index('Kecamatan')
+            kata_kunci = nama_kecamatan.lower().strip()
+
+            for baris in reader:
+                if len(baris) > index_kecamatan:
+                    nama_data = baris[index_kecamatan].lower().strip()
+                    if kata_kunci in nama_data:
+                        hasil.append(baris)
+
+        return hasil
+
     except FileNotFoundError:
-        print("Database kecamatan tidak ditemukan.")
-        return pd.DataFrame()
+        print("File kecamatan.csv tidak ditemukan.")
+        return []
+
 
 def tambah_kecamatan(nama_baru):
     try:
@@ -46,15 +66,30 @@ def tambah_kecamatan(nama_baru):
     except FileNotFoundError:
         data_kecamatan = pd.DataFrame(columns=['ID', 'Kecamatan'])
     
-    if nama_baru.lower() in data_kecamatan['Kecamatan'].str.lower().values:
-        print("Kecamatan sudah ada di database.")
+    nama_kecamatan_baru = nama_baru.strip()
+    kecamatan_sudah_ada = data_kecamatan['Kecamatan'].str.lower().str.strip().isin([nama_kecamatan_baru.lower().strip()]).any()
+    if kecamatan_sudah_ada:
+        print("Kecamatan sudah ada.")
         return
     
-    next_id = 1 if data_kecamatan.empty else data_kecamatan['ID'].max() + 1
-    data_baru = pd.DataFrame({'ID': [next_id], 'Kecamatan': [nama_baru.title()]})
+    data_ada = not data_kecamatan.empty
+    kolom_id = pd.api.types.is_numeric_dtype(data_kecamatan['ID']) 
+    
+    if data_ada and kolom_id:
+        id_terakhir = data_kecamatan['ID'].max()
+        id_baru = id_terakhir + 1
+    else:
+        id_baru = 1
+        
+    data_baru = pd.DataFrame({
+        'ID': [id_baru],
+        'Kecamatan': [nama_kecamatan_baru.title()]
+    })
     data_kecamatan = pd.concat([data_kecamatan, data_baru], ignore_index=True)
+    
     data_kecamatan.to_csv("kecamatan.csv", index=False)
-    print(f"Kecamatan '{nama_baru.title()}' berhasil ditambahkan dengan ID {next_id}.")
+    
+    print(f"Kecamatan '{nama_kecamatan_baru.title()}' berhasil ditambahkan dengan ID {id_baru}.")
 
 def pilih_kecamatan():
     while True:
@@ -72,7 +107,7 @@ def pilih_kecamatan():
 
         # ini nanti buat biar si admin bisa nambahin nama kecamtan baru, kalo ini cuma pas csvnya kosong baru disuruh masukin
         hasil = cari_kecamatan(cari)
-        if hasil.empty:
+        if not hasil:
             print("Kecamatan tidak ditemukan.")
             tambah = input("Apakah ingin menambah kecamatan baru? (y/n): ").lower()
             if tambah == 'y':
@@ -83,13 +118,16 @@ def pilih_kecamatan():
                     print("Nama kecamatan tidak boleh kosong.")
             continue
         else:
-            hasil['Kecamatan'] = hasil['Kecamatan'].str.title()
+            hasil_df = pd.DataFrame(hasil, columns=["ID", "Kecamatan"])
+            hasil_df['Kecamatan'] = hasil_df['Kecamatan'].str.title()
+
             print("\nHasil pencarian:")
-            print(tabulate(hasil, headers='keys', tablefmt='fancy_grid'))
+            print(tabulate(hasil_df, headers='keys', tablefmt='fancy_grid'))
+
             try:
                 id_kec = int(input("Masukkan ID kecamatan anda dari hasil di atas: "))
-                if id_kec in hasil['ID'].values:
-                    return hasil.loc[hasil['ID'] == id_kec, 'Kecamatan'].values[0]
+                if id_kec in hasil_df['ID'].astype(int).values:
+                    return hasil_df.loc[hasil_df['ID'].astype(int) == id_kec, 'Kecamatan'].values[0]
                 else:
                     print("ID tidak valid.")
             except ValueError:
