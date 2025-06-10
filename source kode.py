@@ -35,6 +35,17 @@ def dicek(angka):
     except ValueError as e:
         print(e)
         return False
+    
+def lihat_kecamatan():
+    try:
+        df = pd.read_csv("kecamatan.csv")
+        if 'Kecamatan' in df.columns:
+            df['Kecamatan'] = df['Kecamatan'].str.title()
+            print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
+        else:
+            print("Kolom 'Kecamatan' tidak ditemukan.")
+    except FileNotFoundError:
+        print("File 'kecamatan.csv' tidak ditemukan.")
 
 def cari_kecamatan(nama_kecamatan):
     hasil = []
