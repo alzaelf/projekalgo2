@@ -297,24 +297,19 @@ def Menu(role, id_user, nama):
             elif role.lower() == 'admin':
                 transaction.UpdateMaterial()
 
-        elif pilihan == '5':
-            if role.lower() == 'admin':
+        elif pilihan == '5' and role.lower() == 'admin':
                 transaction.ShowAllTransaction()
 
-        elif pilihan == '6':
-            if role.lower() == 'admin':
+        elif pilihan == '6' and role.lower() == 'admin':
                 print("Fitur ini belum tersedia.")
 
-        elif pilihan == '7':
-            if role.lower() == 'admin':
+        elif pilihan == '7' and role.lower() == 'admin':
                 lihat_kecamatan()
 
-        elif pilihan == '8':
-            if role.lower() == 'admin':
+        elif pilihan == '8' and role.lower() == 'admin':
                 tambah_kecamatan(input("Masukkan nama kecamatan baru: ").strip())
 
-        elif pilihan == '9':
-            if role.lower() == 'admin':
+        elif pilihan == '9' and role.lower() == 'admin':
                 clear_terminal()
                 break
         else:
