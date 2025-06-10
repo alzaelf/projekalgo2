@@ -2,6 +2,9 @@ import pandas as pd
 import os
 import csv
 import pyfiglet
+from LihatMaterial import LIhat_Material
+from hapusbarang import hapus_barang
+from tambahmaterial import tambah_material
 from tabulate import tabulate
 from transaction import Transaction
 
@@ -251,9 +254,10 @@ def Menu(role, id_user, nama):
                 3: "Hapus Material",
                 4: "Ubah Data Material",
                 5: "Lihat Riwayat Transaksi Customer",
-                6: "Hapus Riwayat Transaksi Customer",
-                7: "Lihat Angkutan",
-                8: "Logout"
+                6: "Kelola Angkutan",
+                7: "Lihat Data Kecamatan",
+                8: "Tambah Data Kecamatan",
+                9: "Logout"
                 }
             
             for key, value in menu_admin.items():
@@ -261,43 +265,47 @@ def Menu(role, id_user, nama):
 
         pilihan = input("Pilih menu: ").strip()
         if pilihan == '1':
-            print("Data belum tersedia.")
-        
+            LIhat_Material()
+
         elif pilihan == '2':
-            if role.lower() == 'customer':
+            if role.lower() == 'Customer':
                 transaction.CreateTransaction()
-            
-            if role.lower == 'admin':
-                pass
-
+            elif role.lower() == 'admin':
+                tambah_material()
+                
         elif pilihan == '3':
-            if role.lower() == 'customer':
+            if role.lower() == 'Customer':
                 transaction.ShowAllTransaction()
-            
-            if role.lower == 'admin':
-                pass
+            elif role.lower() == 'admin':
+                hapus_barang()
 
-        elif pilihan == '4':
-            if role.lower() == 'customer':
+        elif pilihan == '4':        #ini kok ga bisa ya buat custommer mau log out gitu???? bang gimana caranya bang
+            if role.lower() == 'Customer':
+                print("Logout berhasil. Kembali ke menu utama...")
+                break 
+            elif role.lower() == 'admin':
+                transaction.UpdateMaterial()
+
+        elif pilihan == '5':
+            if role.lower() == 'admin':
+                transaction.ShowAllTransaction()
+
+        elif pilihan == '6':
+            if role.lower() == 'admin':
+                print("Fitur ini belum tersedia.")
+
+        elif pilihan == '7':
+            if role.lower() == 'admin':
+                lihat_kecamatan()
+
+        elif pilihan == '8':
+            if role.lower() == 'admin':
+                tambah_kecamatan(input("Masukkan nama kecamatan baru: ").strip())
+
+        elif pilihan == '9':
+            if role.lower() == 'admin':
                 clear_terminal()
                 break
-            
-            if role.lower == 'admin':
-                pass
-
-        elif pilihan == '5' and role.lower() == 'admin':
-            transaction.ShowAllTransaction()
-
-        elif pilihan == '6' and role.lower() == 'admin':
-            pass
-
-        elif pilihan == '7' and role.lower() == 'admin':
-            pass
-
-        elif pilihan == '8' and role.lower() == 'admin':
-            clear_terminal()
-            break
-
         else:
             print("Pilihan tidak valid.")
 
