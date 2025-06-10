@@ -279,19 +279,19 @@ def Menu(role, id_user, nama):
             LIhat_Material()
 
         elif pilihan == '2':
-            if role.lower() == 'Customer':
+            if role.lower() == 'customer':
                 transaction.CreateTransaction()
             elif role.lower() == 'admin':
                 tambah_material()
                 
         elif pilihan == '3':
-            if role.lower() == 'Customer':
+            if role.lower() == 'customer':
                 transaction.ShowAllTransaction()
             elif role.lower() == 'admin':
                 hapus_barang()
 
-        elif pilihan == '4':        #ini kok ga bisa ya buat custommer mau log out gitu???? bang gimana caranya bang
-            if role.lower() == 'Customer':
+        elif pilihan == '4':
+            if role.lower() == 'customer':
                 print("Logout berhasil. Kembali ke menu utama...")
                 break 
             elif role.lower() == 'admin':
