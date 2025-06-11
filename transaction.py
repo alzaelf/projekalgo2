@@ -53,87 +53,35 @@ def Input(text, type = 'str'):
 
         return temp if type == 'str' else int(temp)
 
-class Material:
-    def __init__(self, role):
-        try:
-            self.data = pd.read_csv(MATERIAL_FILE)
-        except FileNotFoundError:
-            self.data = pd.DataFrame(columns=['ID', 'Material', 'Price', 'Stock', 'Volume'])
-        
-        self.isAdmin = True if role == 'admin' else False
+def binary_search(data, target):
+    low = 0
+    high = len(data) - 1
+    result_indexes = []
 
-    def AddMaterial(self):
-        if self.isAdmin:
-            print("Ini tambah material")
-            
-            while True:
-                materialName = Input('Nama Material')
+    while low <= high:
+        mid = (low + high) // 2
+        if data[mid] == target:
+            # Jika ditemukan, cari semua yang punya MaterialID sama
+            # Cek ke kiri
+            left = mid
+            while left >= 0 and data[left] == target:
+                result_indexes.append(left)
+                left -= 1
 
-                if not self.data.loc[self.data.Material == materialName].empty:
-                    print('Material sudah ada!')
-                    continue
-                break
+            # Cek ke kanan
+            right = mid + 1
+            while right < len(data) and data[right] == target:
+                result_indexes.append(right)
+                right += 1
 
-            materialPrice = Input('Harga Material', 'num')
-            materialStock = Input('Stok Material', 'num')
-            materialVolume = Input('Volume Material', 'num')
+            return sorted(result_indexes)
 
-            self.data.loc[len(self.data)] = [
-                1 if self.data.empty else self.data.loc[len(self.data) - 1, 'ID'] + 1,
-                materialName,
-                materialPrice,
-                materialStock,
-                materialVolume
-            ]
+        elif data[mid] < target:
+            low = mid + 1
+        else:
+            high = mid - 1
 
-            self.data.to_csv(MATERIAL_FILE, index=False)
-
-            print(f"{materialName} berhasil ditambahkan!")
-            input('Tekan Enter untuk Melanjutkan')
-            clear_terminal()
-        
-    def UpdateMaterial(self):
-        if self.isAdmin:
-            print('Ini daftar material')
-
-            while True:
-                materialId = Input('Material ID', 'num')
-                
-                if self.data.loc[self.data.ID == materialId].empty:
-                    print('Material tidak ditemukan!')
-                    continue
-                break
-            
-            while True:
-                materialName = Input('Nama Material')
-
-                if not self.data.loc[self.data.Material == materialName].empty:
-                    print('Material sudah ada!')
-                    continue
-                break
-
-            materialPrice = Input('Harga Material', 'num')
-            materialVolume = Input('Volume Material', 'num')
-
-            self.data.loc[self.data.ID == materialId] =[
-                materialId,
-                materialName,
-                materialPrice,
-                materialVolume
-            ]
-            
-            self.data.to_csv(MATERIAL_FILE, index=False)
-
-            print(f"{materialName} berhasil ditambahkan!")
-            input('Tekan Enter untuk Melanjutkan')
-            clear_terminal()
-
-    def ShowMaterial(self):
-        print('Data tidak ditemukan' if self.data.empty
-               else self.data.to_string(index=False))
-        
-        input('Tekan Enter Untuk Keluar')
-        clear_terminal()
+    return -1  # Tidak ketemu
 
 class Transaction:
     def __init__(self, userId):
@@ -152,17 +100,37 @@ class Transaction:
 
     def ShowAllTransaction(self):
         if self.isAdmin:
-            print(tabulate(self.data, headers='keys', tablefmt='fancy_grid', showindex=False))
+            data = self.data.sort_values(by='MaterialID').reset_index(drop=True)
+            daftar_material = data['MaterialID'].tolist()
+
+            cari = Input("Masukkan MaterialID yang ingin dicari", 'num')
+
+            hasil_index = binary_search(daftar_material, cari)
+
+            if hasil_index != -1:
+                hasil = self.data.iloc[hasil_index]
+                print("\nData transaksi yang ditemukan:")
+                print(tabulate(hasil, headers='keys', tablefmt='fancy_grid', showindex=False))
+            else:
+                print("\nMaterialID yang kamu cari tidak ditemukan.")
 
         else:
-            print(tabulate(
-                self.data.loc[
-                    self.data.UserID == self.user.loc[:, 'ID'].values[0],
-                    ['ID', 'MaterialID', 'Quantity', 'Delivery', 'Total']], 
-                headers='keys',
-                tablefmt='fancy_grid',
-                showindex=False
-                ))
+            user_id = self.user.loc[:, 'ID'].values[0]
+            data_user = self.data.loc[self.data.UserID == user_id, ['ID', 'MaterialID', 'Quantity', 'Delivery', 'Total']]
+            data_user = data_user.sort_values(by='MaterialID').reset_index(drop=True)
+
+            daftar_material = data_user['MaterialID'].tolist()
+
+            cari = Input("Masukkan MaterialID yang ingin dicari", 'num')
+
+            hasil_index = binary_search(daftar_material, cari)
+
+            if hasil_index != -1:
+                hasil = data_user.iloc[hasil_index]
+                print("\nData transaksi yang ditemukan:")
+                print(tabulate(hasil, headers='keys', tablefmt='fancy_grid', showindex=False))
+            else:
+                print("\nMaterialID yang kamu cari tidak ditemukan.")
             
     def SearchDeliveryRoute(self, graph): # Pencarian Rute Pengiriman (Prims)
         mst = []
