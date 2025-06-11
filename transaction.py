@@ -228,10 +228,3 @@ class Transaction:
         print(f"Transaksi berhasil! Mohon tunggu barang dikirim")
         input('Tekan Enter untuk Melanjutkan')
         clear_terminal()
-
-    # Belum selesai
-    def DeleteATransaction(self):
-        transactionId = input("ID Transaksi : ")
-
-        if not self.data.loc[self.data.ID == transactionId].empty:
-            self.data.drop()
