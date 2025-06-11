@@ -89,6 +89,7 @@ class Transaction:
             self.data = pd.read_csv(TRANSACTION_FILE)
         except FileNotFoundError:
             self.data = pd.DataFrame(columns=['ID', 'MaterialID', 'UserID', 'Quantity', 'Delivery', 'Total'])
+            self.data['Total'] = self.data['Total'].astype('int64')
 
         self.material = pd.read_csv(MATERIAL_FILE)
 
@@ -103,7 +104,7 @@ class Transaction:
             data = self.data.sort_values(by='MaterialID').reset_index(drop=True)
             daftar_material = data['MaterialID'].tolist()
 
-            print(tabulate(self.data, headers='keys', tablefmt='fancy_grid', showindex=False))
+            print(tabulate(self.data, headers='keys', tablefmt='fancy_grid', floatfmt='.0f',showindex=False))
 
             cari = Input("Masukkan MaterialID yang ingin dicari", 'num')
 
@@ -123,7 +124,7 @@ class Transaction:
 
             daftar_material = data_user['MaterialID'].tolist()
 
-            print(tabulate(self.data[self.data.UserID == user_id], headers='keys', tablefmt='fancy_grid', showindex=False))
+            print(tabulate(self.data[self.data.UserID == user_id], headers='keys', tablefmt='fancy_grid', floatfmt='.0f',showindex=False))
 
             cari = Input("Masukkan MaterialID yang ingin dicari", 'num')
 
@@ -204,7 +205,8 @@ class Transaction:
         return distances[finish], path
 
     def CreateTransaction(self):
-        print('Ini List Material //Belum masuk material')
+        # print('Ini List Material //Belum masuk material')
+        print(tabulate(self.material, headers='keys', tablefmt='fancy_grid', showindex=False))
         materialId = Input('ID Material', 'num')
         quantity = Input('Jumlah', 'num')
 
@@ -212,7 +214,7 @@ class Transaction:
 
         delivery = self.CalculateShippingCost(KECAMATAN.lower(), kecamatan)[0] * 100
         materialPrice = self.material.loc[self.material.ID == materialId, 'Price'].values[0].astype(int)
-        total = delivery + materialPrice * quantity
+        total = float(delivery + materialPrice * quantity)
 
         self.data.loc[len(self.data)] = [
             1 if self.data.empty else self.data.loc[len(self.data)-1, 'ID'] + 1,

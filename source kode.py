@@ -50,7 +50,7 @@ def lihat_kecamatan():
 def cari_kecamatan(nama_kecamatan):
     hasil = []
     try:
-        with open("kecamatan.csv", mode='r', encoding='utf-8') as file:
+        with open("kecamatan.csv", mode='r') as file:
             reader = csv.reader(file)
             header = next(reader)
 
@@ -199,7 +199,7 @@ def register():
         'Nomor WA': no_wa,
         'Username': username,
         'Password': password,
-        'Role': 'customer'
+        'Role': 'Customer'
     }])
     baru.to_csv(akun, mode='a', header=not os.path.exists(akun), index=False)
     hiasan("Registrasi berhasil")
@@ -247,7 +247,7 @@ def Menu(role, id_user, nama):
 
         transaction = Transaction(id_user)
 
-        if role == "Customer":
+        if role.lower() == "customer":
             print(f"Halo {nama}! (ID: {id_user})")
             menu_customer = {
                 1: "Lihat Material",
