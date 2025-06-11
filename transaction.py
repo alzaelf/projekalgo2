@@ -103,6 +103,8 @@ class Transaction:
             data = self.data.sort_values(by='MaterialID').reset_index(drop=True)
             daftar_material = data['MaterialID'].tolist()
 
+            print(tabulate(self.data, headers='keys', tablefmt='fancy_grid', showindex=False))
+
             cari = Input("Masukkan MaterialID yang ingin dicari", 'num')
 
             hasil_index = binary_search(daftar_material, cari)
@@ -120,6 +122,8 @@ class Transaction:
             data_user = data_user.sort_values(by='MaterialID').reset_index(drop=True)
 
             daftar_material = data_user['MaterialID'].tolist()
+
+            print(tabulate(self.data[self.data.UserID == user_id], headers='keys', tablefmt='fancy_grid', showindex=False))
 
             cari = Input("Masukkan MaterialID yang ingin dicari", 'num')
 
