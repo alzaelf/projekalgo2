@@ -205,16 +205,28 @@ class Transaction:
         return distances[finish], path
 
     def CreateTransaction(self):
-        # print('Ini List Material //Belum masuk material')
         print(tabulate(self.material, headers='keys', tablefmt='fancy_grid', showindex=False))
+        
         materialId = Input('ID Material', 'num')
+        
+        stock = self.material.loc[self.material.ID == materialId, 'Stock'].values[0]
+        print(type(stock))
+        
         quantity = Input('Jumlah', 'num')
-
+        
+        if stock < quantity or stock == 0:
+            print('Stock tidak mencukupi')
+            return
+        
         kecamatan = self.user.loc[:, 'Kecamatan'].values[0].lower()
 
         delivery = self.CalculateShippingCost(KECAMATAN.lower(), kecamatan)[0] * 100
         materialPrice = self.material.loc[self.material.ID == materialId, 'Price'].values[0].astype(int)
-        total = float(delivery + materialPrice * quantity)
+        total = delivery + materialPrice * quantity
+        
+        self.material.loc[self.material.ID == materialId, 'Stock'] = stock - quantity
+        
+        print(self.material.loc[self.material.ID == materialId])
 
         self.data.loc[len(self.data)] = [
             1 if self.data.empty else self.data.loc[len(self.data)-1, 'ID'] + 1,
@@ -226,6 +238,7 @@ class Transaction:
         ]
 
         self.data.to_csv(TRANSACTION_FILE, index=False)
+        self.material.to_csv(MATERIAL_FILE, index=False)
 
         print(f"Transaksi berhasil! Mohon tunggu barang dikirim")
         input('Tekan Enter untuk Melanjutkan')
