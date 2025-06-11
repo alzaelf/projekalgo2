@@ -210,7 +210,6 @@ class Transaction:
         materialId = Input('ID Material', 'num')
         
         stock = self.material.loc[self.material.ID == materialId, 'Stock'].values[0]
-        print(type(stock))
         
         quantity = Input('Jumlah', 'num')
         
