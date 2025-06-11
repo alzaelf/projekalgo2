@@ -226,8 +226,6 @@ class Transaction:
         
         self.material.loc[self.material.ID == materialId, 'Stock'] = stock - quantity
         
-        print(self.material.loc[self.material.ID == materialId])
-
         self.data.loc[len(self.data)] = [
             1 if self.data.empty else self.data.loc[len(self.data)-1, 'ID'] + 1,
             materialId,
