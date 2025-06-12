@@ -280,7 +280,7 @@ def Menu(role, id_user, nama):
 
         elif pilihan == '2':
             if role.lower() == 'customer':
-                transaction.CreateTransaction()
+                transaction.CreateTransactionMenu()
             elif role.lower() == 'admin':
                 tambah_material()
                 

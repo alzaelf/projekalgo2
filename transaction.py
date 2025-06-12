@@ -1,4 +1,4 @@
-import os
+import os, sys, time
 import pandas as pd
 from tabulate import tabulate 
 import json
@@ -37,7 +37,7 @@ def Check(inputs, type):
             raise ValueError("Tidak boleh kosong")
         elif type == 'str' and inputs.isdigit():
             raise ValueError("Harus berupa huruf")
-        elif type == 'num' and inputs.isalpha() :
+        elif type == 'num' and not inputs.isdigit() :
             raise ValueError("Harus berupa angka")
         
         return inputs
@@ -46,10 +46,20 @@ def Check(inputs, type):
         print(e)
         return False
 
+def ClearPrevLine(lines = 1):
+    for i in range(lines + 1):
+        sys.stdout.write('\033[K')
+        if i < lines:
+            sys.stdout.write('\033[1A')
+    sys.stdout.flush()
+
 def Input(text, type = 'str'):
     while True:
         temp = input(f'{text} : ')
-        if not Check(temp, type): continue
+        if not Check(temp, type):
+            time.sleep(2)
+            ClearPrevLine(2)
+            continue
 
         return temp if type == 'str' else int(temp)
 
@@ -204,38 +214,68 @@ class Transaction:
         
         return distances[finish], path
 
-    def CreateTransaction(self):
-        print(tabulate(self.material, headers='keys', tablefmt='fancy_grid', showindex=False))
-        
-        materialId = Input('ID Material', 'num')
-        
-        stock = self.material.loc[self.material.ID == materialId, 'Stock'].values[0]
-        
-        quantity = Input('Jumlah', 'num')
-        
-        if stock < quantity or stock == 0:
-            print('Stock tidak mencukupi')
-            return
-        
-        kecamatan = self.user.loc[:, 'Kecamatan'].values[0].lower()
-
-        delivery = self.CalculateShippingCost(KECAMATAN.lower(), kecamatan)[0] * 100
-        materialPrice = self.material.loc[self.material.ID == materialId, 'Price'].values[0].astype(int)
-        total = delivery + materialPrice * quantity
-        
-        self.material.loc[self.material.ID == materialId, 'Stock'] = stock - quantity
-        
+    def CreateNewTransaction(self, materialId, quantity, delivery, total):
         self.data.loc[len(self.data)] = [
-            1 if self.data.empty else self.data.loc[len(self.data)-1, 'ID'] + 1,
-            materialId,
-            self.user.loc[:, 'ID'].values[0].astype(int),
-            quantity,
-            delivery,
-            total
-        ]
+                1 if self.data.empty else self.data.loc[len(self.data)-1, 'ID'] + 1,
+                materialId,
+                self.user.loc[:, 'ID'].values[0].astype(int),
+                quantity,
+                delivery,
+                total
+            ]
 
         self.data.to_csv(TRANSACTION_FILE, index=False)
         self.material.to_csv(MATERIAL_FILE, index=False)
+
+    def CreateTransactionMenu(self):
+        loop = True
+        while loop:
+            clear_terminal()
+            
+            print(tabulate(self.material, headers='keys', tablefmt='fancy_grid', showindex=False))
+            
+            materialId = Input('ID Material', 'num')
+
+            if self.material.loc[self.material.ID == materialId].empty:
+                print('ID tidak terdaftar')
+
+                time.sleep(2)
+                continue
+            
+            stock = self.material.loc[self.material.ID == materialId, 'Stock'].values[0]
+            
+            quantity = Input('Jumlah', 'num')
+            
+            if stock < quantity or stock == 0:
+                print('Stock tidak mencukupi')
+                time.sleep(2)
+                
+                continue
+            
+            kecamatan = self.user.loc[:, 'Kecamatan'].values[0].lower()
+
+            delivery = self.CalculateShippingCost(KECAMATAN.lower(), kecamatan)[0] * 100
+            materialPrice = self.material.loc[self.material.ID == materialId, 'Price'].values[0].astype(int)
+            total = delivery + materialPrice * quantity
+            
+            self.material.loc[self.material.ID == materialId, 'Stock'] = stock - quantity
+
+            self.CreateNewTransaction(materialId, quantity, delivery, total)
+
+            buy = Input('Ada material lain yang ingin dibeli? [Y/n]')
+
+            while True:
+                if buy.lower() == 'n':
+                    loop = False
+                    break
+                elif buy.lower() == 'y':
+                    break
+                else:
+                    print('Pilihan tidak valid!')
+                    time.sleep(2)
+                    ClearPrevLine(2)
+
+
 
         print(f"Transaksi berhasil! Mohon tunggu barang dikirim")
         input('Tekan Enter untuk Melanjutkan')
