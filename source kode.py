@@ -5,6 +5,7 @@ import pyfiglet
 from LihatMaterial import LIhat_Material
 from hapusbarang import hapus_barang
 from tambahmaterial import tambah_material
+from angkutan import kelola_angkutan
 from tabulate import tabulate
 from transaction import Transaction
 
@@ -301,7 +302,7 @@ def Menu(role, id_user, nama):
                 transaction.ShowAllTransaction()
 
         elif pilihan == '6' and role.lower() == 'admin':
-                print("Fitur ini belum tersedia.")
+                kelola_angkutan()
 
         elif pilihan == '7' and role.lower() == 'admin':
                 lihat_kecamatan()
