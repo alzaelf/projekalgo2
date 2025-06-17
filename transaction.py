@@ -1,11 +1,19 @@
 import os, sys, time, re
+from datetime import datetime
 import pandas as pd
 from tabulate import tabulate 
 import json
 
 TRANSACTION_FILE = 'transaction.csv'
+DETAIL_FILE = 'detail_transaction.csv'
 MATERIAL_FILE = 'material_dummy.csv'
 KECAMATAN = 'sumbersari'
+
+def GetCsv(filename, column = list):
+    try:
+        return pd.read_csv(filename)
+    except:
+        return pd.DataFrame(columns=column)
 
 def load_graph(path = str):
     try:
@@ -107,19 +115,17 @@ def binary_search(data, target):
 
 class Transaction:
     def __init__(self, userId):
-        try:
-            self.data = pd.read_csv(TRANSACTION_FILE)
-        except FileNotFoundError:
-            self.data = pd.DataFrame(columns=['ID', 'MaterialID', 'UserID', 'Quantity', 'Delivery', 'Total'])
-            self.data['Total'] = self.data['Total'].astype('int64')
+        self.data = GetCsv(TRANSACTION_FILE, ['ID', 'Date', 'UserID', 'Delivery', 'Total', 'VTotal'])
 
-        self.material = pd.read_csv(MATERIAL_FILE)
+        self.material = GetCsv(MATERIAL_FILE, ['ID', 'Material', 'Price', 'Stock', 'Volume'])
+
+        self.detail = GetCsv(DETAIL_FILE, ['ID', 'TransactionID', 'MaterialID', 'Quantity', 'Subtotal', 'SubVolume'])
 
         user = pd.read_csv('user.csv')
         self.user = user.loc[user['ID'] == userId]
 
         self.graph = load_graph('kecamatan_graph.json')
-        self.isAdmin = True if self.user.loc[:, 'Role'].values[0] == 'admin' else False
+        self.isAdmin = True if self.user.loc[:, 'Role'].values[0].lower() == 'admin' else False
 
     def ShowAllTransaction(self):
         data = self.data.copy()
@@ -240,53 +246,78 @@ class Transaction:
         
         return distances[finish], path
 
-    def CreateNewTransaction(self, materialId, quantity, delivery, total):
+    def CreateNewTransaction(self, cart):
+        delivery = self.CalculateShippingCost(KECAMATAN.lower(), self.user.Kecamatan.values[0].lower())[0]
+        total = sum(cart['Subtotal'].values) + delivery
+        vTotal = sum(cart['SubVolume'].values)
+
+        print(total, vTotal, delivery)
+        
         self.data.loc[len(self.data)] = [
                 1 if self.data.empty else self.data.loc[len(self.data)-1, 'ID'] + 1,
-                materialId,
-                self.user.loc[:, 'ID'].values[0].astype(int),
-                quantity,
+                datetime.today().date(),
+                self.user.loc[:, 'ID'].values[0],
                 delivery,
-                total
+                total,
+                vTotal
             ]
+        
+        self.detail = pd.concat([self.detail, cart], axis=0, ignore_index=True)
 
         self.data.to_csv(TRANSACTION_FILE, index=False)
+        self.detail.to_csv(DETAIL_FILE, index=False)
         self.material.to_csv(MATERIAL_FILE, index=False)
 
     def CreateTransactionMenu(self):
         loop = True
+        cart = pd.DataFrame(columns=['ID', 'TransactionID','MaterialID', 'Quantity', 'Subtotal', 'SubVolume'])
         while loop:
             clear_terminal()
             
             print(tabulate(self.material, headers='keys', tablefmt='fancy_grid', showindex=False))
             
-            materialId = Input('ID Material', 'num')
+            materialId = Input('ID Material', 'num', True)
 
-            if self.material.loc[self.material.ID == materialId].empty:
+            if not isinstance(materialId, int) and not materialId.split():
+                print('Kembali ke menu utama...')
+                time.sleep(1)
+                return
+
+            material = self.material.loc[self.material.ID == materialId]
+
+            if not materialId in self.material.ID.values:
                 print('ID tidak terdaftar')
-
                 time.sleep(2)
                 continue
-            
-            stock = self.material.loc[self.material.ID == materialId, 'Stock'].values[0]
             
             quantity = Input('Jumlah', 'num')
+
+            if quantity <= 0 :
+                print('Jumlah dibeli harus lebih dari 0')
             
-            if stock < quantity or stock == 0:
+            if material.Stock.values[0] < quantity or material.Stock.values[0] == 0:
                 print('Stock tidak mencukupi')
                 time.sleep(2)
-                
                 continue
             
-            kecamatan = self.user.loc[:, 'Kecamatan'].values[0].lower()
-
-            delivery = self.CalculateShippingCost(KECAMATAN.lower(), kecamatan)[0] * 100
-            materialPrice = self.material.loc[self.material.ID == materialId, 'Price'].values[0].astype(int)
-            total = delivery + materialPrice * quantity
+            subtotal = int(material.Price.values[0]) * int(quantity)
+            subvolume = float(material.Volume.values[0] * quantity)
             
-            self.material.loc[self.material.ID == materialId, 'Stock'] = stock - quantity
+            self.material.loc[self.material.ID == materialId, 'Stock'] = int(material.Stock.values[0] - quantity)
 
-            self.CreateNewTransaction(materialId, quantity, delivery, total)
+            cart.loc[len(cart)] = [
+                1 if self.detail.empty and cart.empty\
+                    else self.detail.loc[len(self.detail)-1, 'ID'] + 1 if cart.empty\
+                        else cart.loc[len(cart)-1, 'ID'],
+                        1 if self.data.empty else self.data.loc[len(self.data)-1, 'ID'] + 1,
+                        materialId,
+                        quantity,
+                        subtotal,
+                        float(subvolume)
+            ]
+
+            print(cart)
+            print(cart.info())
 
             buy = Input('Ada material lain yang ingin dibeli? [Y/n]')
 
@@ -301,7 +332,7 @@ class Transaction:
                     time.sleep(2)
                     ClearPrevLine(2)
 
-
+        self.CreateNewTransaction(cart)
 
         print(f"Transaksi berhasil! Mohon tunggu barang dikirim")
         input('Tekan Enter untuk Melanjutkan')
