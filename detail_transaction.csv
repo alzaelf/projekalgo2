@@ -1,0 +1,4 @@
+ID,TransactionID,MaterialID,Quantity,Subtotal,SubVolume
+1,1,18,10,400000,0.015
+1,1,17,10,680000,0.052
+2,2,16,10,550000,0.086
