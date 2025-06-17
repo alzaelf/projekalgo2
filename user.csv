@@ -1,10 +1,4 @@
 ID,Nama,Kecamatan,Nomor WA,Username,Password,Role
-0,Nadine Alfina Azzahwa,Pakusari,6285655993964,nadineaelf,123,admin
-1,Khalyana Kartika Dewi,Sumbersari,6282131492054,Khal,1234,Customer
-2,Sefia Maharani,Ajung,628373794947493937,Sefia,1221,Customer
-3,Khalyana,Sumbersari,6234454759477,Khalya,111,Customer
-4,reo,Silo,625680965468899,ppaplow,9087,Customer
-5,mas fana,Kaliwates,6276478709117737,fana,9807,Customer
-6,reo,Rambipuji,6253691767837891,user,pass,Customer
-7,nadine, Ajung, 6247889276899,admin, admin,admin
-
+1,nadine, Ajung, 6247889276899,admin, admin,admin
+2, sefia m9aharani, 6243562639297,user,user, Customer
+3,khalyana,Arjasa,62576151382881,customer,customer,Customer

@@ -1,2 +1,21 @@
 IDTruck,Nama,NoPolisi,Kapasitas
-1, Mitsubishi, D 3567 AP, 100
+1,Motor Roda Tiga Viar Karya,B 2001 AA,1.0
+2,Bajaj Cargo,D 2002 BB,1.5
+3,Suzuki Carry Pick Up,B 2003 CC,2.8
+4,Daihatsu Gran Max Pick Up,F 2004 DD,3.1
+5,Toyota Dyna 110 ST,B 2005 EE,3.5
+6,Mitsubishi L300,H 2006 FF,4.0
+7,Isuzu Traga,B 2007 GG,4.3
+8,Toyota Dyna 130 XT,D 2008 HH,6.5
+9,Hino Dutro 110 SDL,F 2009 II,6.8
+10,Mitsubishi Colt Diesel FE 71,H 2010 JJ,7.2
+11,Isuzu ELF NLR 55,B 2011 KK,7.5
+12,Hino Dutro 130 HD,D 2012 LL,8.0
+13,Mitsubishi Colt Diesel FE 74,F 2013 MM,8.5
+14,Toyota Dyna 130 HT,H 2014 NN,9.0
+15,Mitsubishi Fuso FN 527 ML,B 2015 OO,12.0
+16,Hino Ranger FG 235 JJ,D 2016 PP,14.5
+17,Isuzu Giga FVR,F 2017 QQ,16.0
+18,UD Trucks Quester CDE,H 2018 RR,18.0
+19,Isuzu Giga GXZ,B 2019 SS,25.0
+20,Volvo FMX 440,D 2020 TT,28.0

@@ -46,30 +46,54 @@ def kelola_angkutan():
             return {}
 
 
-    # Load transaksi dan hitung total volume
     def load_transaction_weights(materials):
         try:
             df = pd.read_csv("transaction.csv")
-            items = []
-            for _, row in df.iterrows():
-                try:
-                    mat_id = int(float(row["MaterialID"]))
-                    quantity = int(float(row["Quantity"]))
-                    if mat_id in materials:
-                        volume = materials[mat_id]["volume"]
-                        total_volume = quantity * volume
-                        items.append({
-                            "name": materials[mat_id]["name"],
-                            "value": total_volume,
-                            "weight": volume
-                        })
-                except (ValueError, KeyError) as e:
-                    print(f"Error memproses baris: {row.to_dict()}, Error: {e}")
-                    continue
-            return items
+
+            if df.empty:
+                print("File transaction.csv kosong.")
+                return []
+
+            try:
+                # Input ID Transaksi
+                trx_id = int(input("Masukkan ID Transaksi yang ingin diproses: "))
+
+                # Filter transaksi berdasarkan ID
+                row = df[df["ID"] == trx_id]
+
+                if row.empty:
+                    print(f"Transaksi dengan ID {trx_id} tidak ditemukan.")
+                    return []
+
+                row = row.iloc[0]  # Ambil baris pertama dari hasil filter
+
+                mat_id = int(float(row["MaterialID"]))
+                quantity = int(float(row["Quantity"]))
+
+                items = []
+
+                if mat_id in materials:
+                    volume = materials[mat_id]["volume"]
+                    total_volume = quantity * volume
+
+                    items.append({
+                        "name": materials[mat_id]["name"],
+                        "value": total_volume,
+                        "weight": volume
+                    })
+                else:
+                    print(f"Material ID {mat_id} tidak ditemukan dalam data 'materials'.")
+
+                return items
+
+            except ValueError as e:
+                print(f"Input tidak valid. Error: {e}")
+                return []
+
         except FileNotFoundError:
             print("File transaction.csv tidak ditemukan.")
             return []
+
         except Exception as e:
             print(f"Error membaca file transaction.csv: {e}")
             return []
@@ -78,18 +102,24 @@ def kelola_angkutan():
     def unbounded_knapsack(items, capacity):
         if not items:
             return 0.0, []
-        
-        dp = [0.0] * (capacity + 1)
-        included = [[] for _ in range(capacity + 1)]
-        
-        for w in range(capacity + 1):
+
+        max_volume = 0.0
+        best_combination = []
+
+        def backtrack(used, total_volume):
+            nonlocal max_volume, best_combination
+            if total_volume > capacity:
+                return
+            if total_volume > max_volume:
+                max_volume = total_volume
+                best_combination = used[:]
             for item in items:
-                weight = int(item["weight"])
-                if weight <= w:
-                    if item["value"] + dp[w - weight] > dp[w]:
-                        dp[w] = item["value"] + dp[w - weight]
-                        included[w] = included[w - weight] + [item["name"]]
-        return dp[capacity], included[capacity]
+                used.append(item["name"])
+                backtrack(used, total_volume + item["weight"])
+                used.pop()
+
+        backtrack([], 0.0)
+        return max_volume, best_combination
     
     trucks = load_trucks()
     if not trucks:
@@ -111,7 +141,7 @@ def kelola_angkutan():
     trucks_df = pd.DataFrame([
     {"ID": tid, "Nama": t["nama"], "Nopol": t["nopol"], "Kapasitas (m³)": t["kapasitas"]}
     for tid, t in trucks.items()
-])
+    ])
 
     print("\n=== Daftar Truk yang Tersedia ===")
     print(tabulate(trucks_df, headers="keys", tablefmt="fancy_grid", showindex=False))
