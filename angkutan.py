@@ -4,62 +4,84 @@ from tabulate import tabulate
 import os
 
 def kelola_angkutan():
-    print("\n=== Kelola Angkutan dan Optimasi Pengiriman ===")
 
     # Load data truk
     def load_trucks():
-        trucks = {}
-        with open("dataAngkutan.csv", mode='r', encoding='utf-8') as file:
-            reader = csv.DictReader(file)
-            for row in reader:
+        try:
+            df = pd.read_csv("dataAngkutan.csv")
+            trucks = {}
+            for _, row in df.iterrows():
                 truck_id = int(row["IDTruck"])
                 trucks[truck_id] = {
                     "nama": row["Nama"],
                     "nopol": row["NoPolisi"],
                     "kapasitas": int(row["Kapasitas"])
                 }
-        return trucks
+            return trucks
+        except FileNotFoundError:
+            print("File dataAngkutan.csv tidak ditemukan.")
+            return {}
+        except Exception as e:
+            print(f"Error membaca file dataAngkutan.csv: {e}")
+            return {}
+
 
     # Load material
     def load_materials():
-        materials = {}
-        with open("material_dummy.csv", mode='r', encoding='utf-8') as file:
-            reader = csv.DictReader(file)
-            for row in reader:
+        try:
+            df = pd.read_csv("material_dummy.csv")
+            materials = {}
+            for _, row in df.iterrows():
                 material_id = int(row["ID"])
                 materials[material_id] = {
                     "name": row["Material"],
                     "volume": float(row["Volume"])
                 }
-        return materials
+            return materials
+        except FileNotFoundError:
+            print("File material_dummy.csv tidak ditemukan.")
+            return {}
+        except Exception as e:
+            print(f"Error membaca file material_dummy.csv: {e}")
+            return {}
+
 
     # Load transaksi dan hitung total volume
     def load_transaction_weights(materials):
-        items = []
-        with open("transaction.csv", mode='r', encoding='utf-8') as file:
-            reader = csv.DictReader(file)
-        for row in reader:
-            try:
-                mat_id = int(float(row["MaterialID"]))
-                quantity = int(float(row["Quantity"]))
-            except ValueError:
-                print(f"Data transaksi tidak valid: {row}")
-                continue  # ← harus di dalam except!
-
-            if mat_id in materials:
-                volume = materials[mat_id]["volume"]
-                total_volume = quantity * volume
-                items.append({
-                    "name": materials[mat_id]["name"],
-                    "value": total_volume,
-                    "weight": volume
-                })
-        return items
+        try:
+            df = pd.read_csv("transaction.csv")
+            items = []
+            for _, row in df.iterrows():
+                try:
+                    mat_id = int(float(row["MaterialID"]))
+                    quantity = int(float(row["Quantity"]))
+                    if mat_id in materials:
+                        volume = materials[mat_id]["volume"]
+                        total_volume = quantity * volume
+                        items.append({
+                            "name": materials[mat_id]["name"],
+                            "value": total_volume,
+                            "weight": volume
+                        })
+                except (ValueError, KeyError) as e:
+                    print(f"Error memproses baris: {row.to_dict()}, Error: {e}")
+                    continue
+            return items
+        except FileNotFoundError:
+            print("File transaction.csv tidak ditemukan.")
+            return []
+        except Exception as e:
+            print(f"Error membaca file transaction.csv: {e}")
+            return []
 
 
     def unbounded_knapsack(items, capacity):
+        if not items:
+            return 0.0, []
+        
         dp = [0.0] * (capacity + 1)
         included = [[] for _ in range(capacity + 1)]
+        
         for w in range(capacity + 1):
             for item in items:
                 weight = int(item["weight"])
@@ -68,32 +90,61 @@ def kelola_angkutan():
                         dp[w] = item["value"] + dp[w - weight]
                         included[w] = included[w - weight] + [item["name"]]
         return dp[capacity], included[capacity]
-
-    # --- Eksekusi ---
+    
     trucks = load_trucks()
-    materials = load_materials()
-    items = load_transaction_weights(materials)
+    if not trucks:
+        print("Tidak ada data truk yang tersedia.")
+        return
 
-    # Hitung total volume dari semua transaksi
+    materials = load_materials()
+    if not materials:
+        print("Tidak ada data material yang tersedia.")
+        return
+
+    items = load_transaction_weights(materials)
+    if not items:
+        print("Tidak ada data transaksi yang tersedia.")
+        return
+
     total_volume_transaksi = sum(item["value"] for item in items)
 
+    trucks_df = pd.DataFrame([
+    {"ID": tid, "Nama": t["nama"], "Nopol": t["nopol"], "Kapasitas (m³)": t["kapasitas"]}
+    for tid, t in trucks.items()
+])
+
     print("\n=== Daftar Truk yang Tersedia ===")
-    print(f"{'ID':<5} {'Nama':<20} {'Nopol':<15} {'Kapasitas (m³)':<15}")
-    print("-" * 60)
-    for tid, truck in trucks.items():
-        print(f"{tid:<5} {truck['nama']:<20} {truck['nopol']:<15} {truck['kapasitas']:<15}")
+    print(tabulate(trucks_df, headers="keys", tablefmt="fancy_grid", showindex=False))
 
-    print(f"\n📦 Total volume transaksi yang perlu diangkut: {total_volume_transaksi:.2f} m³")
+    print(f"\n Total volume transaksi yang perlu diangkut: {total_volume_transaksi:.2f} m³")
 
-    # Input pemilihan truk
-    selected = int(input("\nMasukkan ID truk yang ingin digunakan: "))
+    # Input pemilihan truk dengan validasi
+    try:
+        selected = int(input("\nMasukkan ID truk yang ingin digunakan: "))
+        if selected not in trucks:
+            print("ID truk tidak ditemukan.")
+            return
+    except ValueError:
+        print("Input harus berupa angka.")
+        return
+    except KeyboardInterrupt:
+        print("\n Operasi dibatalkan.")
+        return
+
     capacity = trucks[selected]["kapasitas"]
 
     # Jalankan knapsack
     max_val, selected_items = unbounded_knapsack(items, capacity)
 
-    print(f"\n✅ Total volume termuat: {max_val:.2f} m³ dari kapasitas {capacity} m³")
-    print("📋 Barang yang dimuat:")
-    for item in selected_items:
-        print(f"- {item}")
+    print(f"\nTruk terpilih: {trucks[selected]['nama']} ({trucks[selected]['nopol']})")
+    print(f"Total volume termuat: {max_val:.2f} m³ dari kapasitas {capacity} m³")
+    print(f"Efisiensi pemuatan: {(max_val/capacity)*100:.1f}%")
+    
+    if selected_items:
+        print("\n Barang yang dimuat:")
+        for item in selected_items:
+            print(f"- {item}")
+    else:
+        print("\nTidak ada barang yang bisa dimuat.")
 
+    input("\nTekan Enter untuk kembali ke menu...")
