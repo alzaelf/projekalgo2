@@ -1,4 +1,4 @@
-import os, sys, time
+import os, sys, time, re
 import pandas as pd
 from tabulate import tabulate 
 import json
@@ -30,6 +30,10 @@ def load_graph(path = str):
 def clear_terminal():
     os.system('cls' if os.name == 'nt' else 'clear')
 
+def is_float(string):
+    pattern = r'^[+-]?(\d+\.\d*|\.\d+)([eE][+-]?\d+)?$'
+    return bool(re.match(pattern, string))
+
 # Dari source kode.py
 def Check(inputs, type):
     try:
@@ -39,6 +43,8 @@ def Check(inputs, type):
             raise ValueError("Harus berupa huruf")
         elif type == 'num' and not inputs.isdigit() :
             raise ValueError("Harus berupa angka")
+        elif type == 'flo' and not is_float(inputs):
+            raise ValueError("Harus berupa float (X.X)")
         
         return inputs
     
@@ -53,15 +59,21 @@ def ClearPrevLine(lines = 1):
             sys.stdout.write('\033[1A')
     sys.stdout.flush()
 
-def Input(text, type = 'str'):
+def Input(text, datatype = 'str', null=False):
     while True:
         temp = input(f'{text} : ')
-        if not Check(temp, type):
+
+        if null and not temp.split():
+            return temp
+            
+        if not Check(temp, datatype):
             time.sleep(2)
             ClearPrevLine(2)
             continue
 
-        return temp if type == 'str' else int(temp)
+        return temp if datatype == 'str' \
+            else int(temp) if datatype == 'num' \
+                else float(temp) if datatype == 'flo' else None
 
 def binary_search(data, target):
     low = 0
