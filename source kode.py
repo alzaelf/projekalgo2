@@ -47,6 +47,8 @@ def lihat_kecamatan():
             print("Kolom 'Kecamatan' tidak ditemukan.")
     except FileNotFoundError:
         print("File 'kecamatan.csv' tidak ditemukan.")
+    
+    input("\nTekan enter untuk kembali ke menu...")
 
 def cari_kecamatan(nama_kecamatan):
     hasil = []

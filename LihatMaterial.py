@@ -9,7 +9,7 @@ def selection_sort(data):
                 min_index = j
         data[i], data[min_index] = data[min_index], data[i]
     return data
- 
+
 def linear_search(data, keyword):
     result = []
     for row in data:
@@ -17,22 +17,27 @@ def linear_search(data, keyword):
             result.append(row)
     return result
 
-def LIhat_Material():
+def Lihat_Material():
     try:
         df = pd.read_csv("material_dummy.csv")
     except FileNotFoundError:
-        print("File material.csv tidak ditemukan.")
+        print("File material_dummy.csv tidak ditemukan.")
+        return
+
+    if 'Material' not in df.columns:
+        print("Kolom 'Material' tidak ditemukan dalam file.")
         return
 
     data = df.to_dict(orient='records')
     data = selection_sort(data)
 
-    while True:
-        print("\nDaftar Material")
-        print(tabulate(data, headers="keys", tablefmt="fancy_grid"))
+    print("\nDaftar Material Tersedia:")
+    print(tabulate(data, headers="keys", tablefmt="fancy_grid"))
 
+    while True:
         cari = input("\nMasukkan nama material yang ingin dicari (atau kosongkan untuk kembali): ").strip()
         if not cari:
+            print("Kembali ke menu sebelumnya...")
             break
 
         hasil = linear_search(data, cari)
