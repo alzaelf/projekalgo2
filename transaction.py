@@ -110,43 +110,57 @@ class Transaction:
         self.isAdmin = True if self.user.loc[:, 'Role'].values[0] == 'admin' else False
 
     def ShowAllTransaction(self):
-        if self.isAdmin:
-            data = self.data.sort_values(by='MaterialID').reset_index(drop=True)
-            daftar_material = data['MaterialID'].tolist()
+        data = self.data.copy()
 
-            print(tabulate(self.data, headers='keys', tablefmt='fancy_grid', floatfmt='.0f',showindex=False))
+        # Mapping MaterialID ke Nama Material
+        material_dict = dict(zip(self.material['ID'], self.material['Material']))
+        data['Material'] = data['MaterialID'].map(material_dict)
 
-            cari = Input("Masukkan MaterialID yang ingin dicari", 'num')
+        # Mapping UserID ke Nama User
+        user_df = pd.read_csv('user.csv')
+        user_dict = dict(zip(user_df['ID'], user_df['Nama']))
+        data['User'] = data['UserID'].map(user_dict)
 
-            hasil_index = binary_search(daftar_material, cari)
+        # Ubah semua nama material ke huruf kecil untuk pencarian
+        data['MaterialLower'] = data['Material'].str.lower()
 
-            if hasil_index != -1:
-                hasil = self.data.iloc[hasil_index]
-                print("\nData transaksi yang ditemukan:")
-                print(tabulate(hasil, headers='keys', tablefmt='fancy_grid', showindex=False))
-            else:
-                print("\nMaterialID yang kamu cari tidak ditemukan.")
+        # Urutkan berdasarkan nama material (syarat binary search)
+        data = data.sort_values(by='MaterialLower').reset_index(drop=True)
+        daftar_material = data['MaterialLower'].tolist()
 
+        # Tampilkan semua transaksi
+        print(tabulate(
+            data[['ID', 'Material', 'User', 'Quantity', 'Delivery', 'Total']],
+            headers='keys',
+            tablefmt='fancy_grid',
+            floatfmt='.0f',
+            showindex=False
+        ))
+
+        # Input pencarian material (dengan opsi kembali)
+        cari = input("\nMasukkan nama Material yang ingin dicari (atau tekan Enter untuk kembali): ").strip().lower()
+
+        if not cari:
+            print("\nKembali ke menu admin...")
+            return
+
+        hasil_index = binary_search(daftar_material, cari)
+
+        if hasil_index != -1:
+            hasil = data.iloc[hasil_index]
+            print("\nData transaksi yang ditemukan:")
+            print(tabulate(
+                hasil[['ID', 'Material', 'User', 'Quantity', 'Delivery', 'Total']],
+                headers='keys',
+                tablefmt='fancy_grid',
+                showindex=False
+            ))
         else:
-            user_id = self.user.loc[:, 'ID'].values[0]
-            data_user = self.data.loc[self.data.UserID == user_id, ['ID', 'MaterialID', 'Quantity', 'Delivery', 'Total']]
-            data_user = data_user.sort_values(by='MaterialID').reset_index(drop=True)
+            print("\nMaterial yang kamu cari tidak ditemukan.")
 
-            daftar_material = data_user['MaterialID'].tolist()
+        input("\nTekan Enter untuk kembali ke menu admin...")
 
-            print(tabulate(self.data[self.data.UserID == user_id], headers='keys', tablefmt='fancy_grid', floatfmt='.0f',showindex=False))
 
-            cari = Input("Masukkan MaterialID yang ingin dicari", 'num')
-
-            hasil_index = binary_search(daftar_material, cari)
-
-            if hasil_index != -1:
-                hasil = data_user.iloc[hasil_index]
-                print("\nData transaksi yang ditemukan:")
-                print(tabulate(hasil, headers='keys', tablefmt='fancy_grid', showindex=False))
-            else:
-                print("\nMaterialID yang kamu cari tidak ditemukan.")
-            
     def SearchDeliveryRoute(self, graph): # Pencarian Rute Pengiriman (Prims)
         mst = []
         vertices = set(graph.keys())
