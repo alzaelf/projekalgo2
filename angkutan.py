@@ -5,7 +5,6 @@ import os
 
 def kelola_angkutan():
 
-    # Load data truk
     def load_trucks():
         try:
             df = pd.read_csv("dataAngkutan.csv")
@@ -25,8 +24,6 @@ def kelola_angkutan():
             print(f"Error membaca file dataAngkutan.csv: {e}")
             return {}
 
-
-    # Load material
     def load_materials():
         try:
             df = pd.read_csv("material_dummy.csv")
@@ -45,82 +42,87 @@ def kelola_angkutan():
             print(f"Error membaca file material_dummy.csv: {e}")
             return {}
 
+    try:
+        trx_df = pd.read_csv("transaction.csv")
+        trx_df_display = trx_df[["ID", "Date", "UserID", "Delivery", "VTotal"]]
+        print("\n=== Daftar Transaksi yang Tersedia ===")
+        print(tabulate(trx_df_display, headers="keys", tablefmt="grid", showindex=False))
+    except Exception as e:
+        print(f"Gagal membaca transaksi: {e}")
+        return
 
-    def load_transaction_weights(materials):
+    try:
+        selected_ids = input("\nMasukkan ID transaksi yang ingin diproses (pisahkan dengan koma): ")
+        selected_ids = [int(i.strip()) for i in selected_ids.split(",") if i.strip().isdigit()]
+        if not selected_ids:
+            print("Tidak ada ID transaksi yang valid.")
+            return
+    except Exception as e:
+        print(f"Input tidak valid: {e}")
+        return
+
+    def load_transactions_and_details(materials, selected_ids):
         try:
-            df = pd.read_csv("transaction.csv")
+            trx_df = pd.read_csv("transaction.csv")
+            detail_df = pd.read_csv("detail_transaction.csv")
+            kecamatan_df = pd.read_csv("kecamatan.csv")
 
-            if df.empty:
-                print("File transaction.csv kosong.")
-                return []
+            trx_df = trx_df[trx_df["ID"].isin(selected_ids)]
+            detail_df = detail_df[detail_df["TransactionID"].isin(selected_ids)]
 
-            try:
-                # Input ID Transaksi
-                trx_id = int(input("Masukkan ID Transaksi yang ingin diproses: "))
+            merged = pd.merge(detail_df, trx_df, left_on="TransactionID", right_on="ID", suffixes=("_detail", "_trx"))
 
-                # Filter transaksi berdasarkan ID
-                row = df[df["ID"] == trx_id]
-
-                if row.empty:
-                    print(f"Transaksi dengan ID {trx_id} tidak ditemukan.")
-                    return []
-
-                row = row.iloc[0]  # Ambil baris pertama dari hasil filter
-
+            items = []
+            tujuan = set()
+            total_volume_calculated = 0  
+            
+            for _, row in merged.iterrows():
                 mat_id = int(float(row["MaterialID"]))
                 quantity = int(float(row["Quantity"]))
-
-                items = []
-
+                kecamatan_id = int(row["Delivery"])
+                tujuan.add(kecamatan_id)
                 if mat_id in materials:
                     volume = materials[mat_id]["volume"]
-                    total_volume = quantity * volume
-
+                    total_volume_calculated += volume * quantity  
                     items.append({
                         "name": materials[mat_id]["name"],
-                        "value": total_volume,
-                        "weight": volume
+                        "value": volume,
+                        "weight": volume,
+                        "max_quantity": quantity,
+                        "kecamatan_id": kecamatan_id
                     })
+
+            tujuan_nama = []
+            for kid in tujuan:
+                nama = kecamatan_df[kecamatan_df["ID"] == kid]["Kecamatan"]
+                if not nama.empty:
+                    tujuan_nama.append(nama.values[0])
                 else:
-                    print(f"Material ID {mat_id} tidak ditemukan dalam data 'materials'.")
-
-                return items
-
-            except ValueError as e:
-                print(f"Input tidak valid. Error: {e}")
-                return []
-
-        except FileNotFoundError:
-            print("File transaction.csv tidak ditemukan.")
-            return []
-
+                    tujuan_nama.append(f"ID_{kid} (tidak ditemukan)")
+            
+            return items, tujuan_nama, total_volume_calculated  
         except Exception as e:
-            print(f"Error membaca file transaction.csv: {e}")
-            return []
+            print(f"Error load transaksi: {e}")
+            return [], [], 0
 
+    def bounded_knapsack(items, capacity):
+        
+        selected_items = []
+        total_weight = 0
+        total_value = 0
+        
+        for item in items:
+            quantity = int(item["max_quantity"])
+            weight_per_unit = item["weight"]
+            value_per_unit = item["value"]
+            
+            
+            selected_items.extend([item["name"]] * quantity)
+            total_weight += weight_per_unit * quantity
+            total_value += value_per_unit * quantity
+        
+        return total_value, selected_items
 
-    def unbounded_knapsack(items, capacity):
-        if not items:
-            return 0.0, []
-
-        max_volume = 0.0
-        best_combination = []
-
-        def backtrack(used, total_volume):
-            nonlocal max_volume, best_combination
-            if total_volume > capacity:
-                return
-            if total_volume > max_volume:
-                max_volume = total_volume
-                best_combination = used[:]
-            for item in items:
-                used.append(item["name"])
-                backtrack(used, total_volume + item["weight"])
-                used.pop()
-
-        backtrack([], 0.0)
-        return max_volume, best_combination
-    
     trucks = load_trucks()
     if not trucks:
         print("Tidak ada data truk yang tersedia.")
@@ -131,22 +133,27 @@ def kelola_angkutan():
         print("Tidak ada data material yang tersedia.")
         return
 
-    items = load_transaction_weights(materials)
+    items, tujuan_nama, total_volume_transaksi = load_transactions_and_details(materials, selected_ids)
     if not items:
         print("Tidak ada data transaksi yang tersedia.")
         return
 
-    total_volume_transaksi = sum(item["value"] for item in items)
+    print("\n=== DEBUG: Detail Items ===")
+    for item in items:
+        print(f"- {item['name']}: {item['max_quantity']} unit × {item['value']:.3f} m³ = {item['value'] * item['max_quantity']:.3f} m³")
+    print(f"Total volume calculated: {sum(item['value'] * item['max_quantity'] for item in items):.3f} m³")
+    print("==============================")
 
     trucks_df = pd.DataFrame([
-    {"ID": tid, "Nama": t["nama"], "Nopol": t["nopol"], "Kapasitas (m³)": t["kapasitas"]}
-    for tid, t in trucks.items()
+        {"ID": tid, "Nama": t["nama"], "Nopol": t["nopol"], "Kapasitas (m³)": t["kapasitas"]}
+        for tid, t in trucks.items()
     ])
 
     print("\n=== Daftar Truk yang Tersedia ===")
     print(tabulate(trucks_df, headers="keys", tablefmt="fancy_grid", showindex=False))
 
-    print(f"\n Total volume transaksi yang perlu diangkut: {total_volume_transaksi:.2f} m³")
+    print(f"\nTotal volume seluruh transaksi: {total_volume_transaksi:.2f} m³")
+    print(f"Daftar kecamatan tujuan: {', '.join(tujuan_nama)}")
 
     # Input pemilihan truk dengan validasi
     try:
@@ -163,18 +170,20 @@ def kelola_angkutan():
 
     capacity = trucks[selected]["kapasitas"]
 
-    # Jalankan knapsack
-    max_val, selected_items = unbounded_knapsack(items, capacity)
+    # Jalankan bounded knapsack
+    max_val, selected_items = bounded_knapsack(items, capacity)
 
     print(f"\nTruk terpilih: {trucks[selected]['nama']} ({trucks[selected]['nopol']})")
     print(f"Total volume termuat: {max_val:.2f} m³ dari kapasitas {capacity} m³")
     print(f"Efisiensi pemuatan: {(max_val/capacity)*100:.1f}%")
-    
+
     if selected_items:
-        print("\n Barang yang dimuat:")
-        for item in selected_items:
-            print(f"- {item}")
+        print("\nBarang yang dimuat:")
+        for item in set(selected_items):
+            print(f"- {item}: {selected_items.count(item)}")
     else:
         print("\nTidak ada barang yang bisa dimuat.")
+
+    print(f"\nTruk akan berhenti di kecamatan: {', '.join(tujuan_nama)}")
 
     input("\nTekan Enter untuk kembali ke menu...")
