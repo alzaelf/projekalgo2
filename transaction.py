@@ -83,6 +83,49 @@ def Input(text, datatype = 'str', null=False):
             else int(temp) if datatype == 'num' \
                 else float(temp) if datatype == 'flo' else None
 
+def CalculateShippingCost(graph, start, finish): # Kalkulasi Ongkir (Djikstra)
+        distances = {node: float('inf') for node in graph}
+        distances[start] = 0
+        predecessors = {node: None for node in graph}
+        unvisited = set(graph.keys())
+        
+        while unvisited:
+            # Pilih simpul dengan jarak terkecil dari unvisited
+            min_distance = float('inf')
+            current = None
+            for node in unvisited:
+                if distances[node] < min_distance:
+                    min_distance = distances[node]
+                    current = node
+            
+            if current is None:
+                break
+            
+            if current == finish:
+                break
+            
+            unvisited.remove(current)
+            
+            for neighbor, weight in graph[current].items():
+                if neighbor in unvisited:
+                    new_distance = distances[current] + weight
+                    if new_distance < distances[neighbor]:
+                        distances[neighbor] = new_distance
+                        predecessors[neighbor] = current
+
+        path = []
+        current = finish
+        while current is not None:
+            path.append(current)
+            current = predecessors[current]
+        path = path[::-1]
+        
+        # Periksa apakah jalur valid
+        if distances[finish] == float('inf'):
+            print(f"Tidak ada jalur dari {start} ke {finish}")
+        
+        return distances[finish], path
+
 def binary_search(data, target):
     low = 0
     high = len(data) - 1
@@ -137,6 +180,7 @@ class Transaction:
             print("Salah satu file CSV kosong.")
             return None
 
+        # gabung detail dengan transaction
         merged_data = details.merge(transactions, left_on="TransactionID", right_on="ID", suffixes=('_detail', '_transaction'))
 
         # Mendapatkan nama material
@@ -145,7 +189,11 @@ class Transaction:
         # Mendapatkan nama user
         merged_data = merged_data.merge(users[['ID', 'Nama']], left_on="UserID", right_on="ID", suffixes=('', '_user'))
 
-        data = merged_data[['TransactionID', 'Material', 'Quantity', 'Subtotal', 'SubVolume', 'Date', 'Nama', 'Delivery', 'Total', 'VTotal']]
+        # pilah kolom
+        data = merged_data[['TransactionID', 'Material', 'Quantity', 'Subtotal', 'Date', 'Nama', 'Delivery']]
+        
+        data = data.copy()
+        data.loc['Subtotal'] = data['Subtotal'].astype(int)
 
         data['MaterialLower'] = data['Material'].str.lower()
 
@@ -154,7 +202,7 @@ class Transaction:
 
         if self.isAdmin:
             print(tabulate(
-            data[['TransactionID', 'Nama', 'Material', 'Quantity', 'Delivery', 'Subtotal', 'SubVolume']],
+            data[['TransactionID', 'Material', 'Nama', 'Quantity', 'Delivery', 'Subtotal']],
             headers='keys',
             tablefmt='fancy_grid',
             showindex=False
@@ -171,9 +219,8 @@ class Transaction:
             if hasil_index != -1:
                 hasil = data.iloc[hasil_index]
                 print("\nData transaksi yang ditemukan:")
-                print(hasil)
                 print(tabulate(
-                    hasil[['TransactionID', 'Material', 'Nama', 'Quantity', 'Delivery', 'Total']],
+                    hasil[['TransactionID', 'Material', 'Nama', 'Quantity', 'Delivery', 'Subtotal']],
                     headers='keys',
                     tablefmt='fancy_grid',
                     showindex=False
@@ -184,8 +231,9 @@ class Transaction:
             input("\nTekan Enter untuk kembali ke menu admin...")
 
         else:
+            user = str(self.user['Nama'].copy().values[0])
             print(tabulate(
-            data.loc[data['Nama'] == self.user['Nama'].values[0], ['TransactionID', 'Material', 'Quantity', 'Delivery', 'Subtotal', 'SubVolume']],
+            data.loc[data['Nama'] == self.user['Nama'].copy().values[0], ['TransactionID', 'Material', 'Quantity', 'Delivery', 'Subtotal']],
             headers='keys',
             tablefmt='fancy_grid',
             showindex=False
@@ -198,14 +246,12 @@ class Transaction:
                 return
 
             hasil_index = binary_search(daftar_material, cari)
-            print(hasil_index)
 
             if hasil_index != -1:
-                hasil = data.iloc[hasil_index]
+                hasil = data.loc[hasil_index].copy()
                 print("\nData transaksi yang ditemukan:")
-                # print(hasil)
                 print(tabulate(
-                    hasil[hasil.Nama==self.user['Nama'].values[0], ['TransactionID', 'Material', 'Quantity', 'Delivery', 'Total']],
+                    hasil.loc[hasil['Nama']==self.user['Nama'].copy().values[0], ['TransactionID', 'Material', 'Nama', 'Quantity', 'Delivery', 'Subtotal']],
                     headers='keys',
                     tablefmt='fancy_grid',
                     showindex=False
@@ -214,61 +260,6 @@ class Transaction:
                 print("\nMaterial yang kamu cari tidak ditemukan.")
 
             input("\nTekan Enter untuk kembali ke menu admin...")
-
-    def ShowAllTransaction1(self):
-        data = self.data.copy()
-        detail = self.detail.copy()
-
-        # Mapping MaterialID ke Nama Material
-        material_dict = dict(zip(self.material['ID'], self.material['Material']))
-        detail['Material'] = detail['MaterialID'].map(material_dict)
-
-        # Mapping UserID ke Nama User
-        user_df = pd.read_csv('user.csv')
-        user_dict = dict(zip(user_df['ID'], user_df['Nama']))
-        data['User'] = data['UserID'].map(user_dict)
-
-        # Ubah semua nama material ke huruf kecil untuk pencarian
-        detail['MaterialLower'] = detail['Material'].str.lower()
-
-        # Urutkan berdasarkan nama material (syarat binary search)
-        detail = detail.sort_values(by='MaterialLower').reset_index(drop=True)
-        daftar_material = detail['MaterialLower'].tolist()
-
-        show = pd.merge(detail, data, how='left')
-        show['Subtotal'] = show['Subtotal'].astype('int64')
-        print(show.columns)
-        # Tampilkan semua transaksi
-        print(tabulate(
-            show[['ID', 'User', 'Material', 'Quantity', 'Delivery', 'Subtotal', 'SubVolume']],
-            headers='keys',
-            tablefmt='fancy_grid',
-            showindex=False
-        ))
-
-        # Input pencarian material (dengan opsi kembali)
-        cari = input("\nMasukkan nama Material yang ingin dicari (atau tekan Enter untuk kembali): ").strip().lower()
-
-        if not cari:
-            print("\nKembali ke menu admin...")
-            return
-
-        hasil_index = binary_search(daftar_material, cari)
-
-        if hasil_index != -1:
-            hasil = show.iloc[hasil_index]
-            print("\nData transaksi yang ditemukan:")
-            print(hasil)
-            print(tabulate(
-                hasil[['TransactionID', 'Material', 'User', 'Quantity', 'Delivery', 'Total']],
-                headers='keys',
-                tablefmt='fancy_grid',
-                showindex=False
-            ))
-        else:
-            print("\nMaterial yang kamu cari tidak ditemukan.")
-
-        input("\nTekan Enter untuk kembali ke menu admin...")
 
     def SearchDeliveryRoute(self, graph): # Pencarian Rute Pengiriman (Prims)
         mst = []
@@ -293,52 +284,9 @@ class Transaction:
                 visited.add(min_edge[1])
 
         return mst
-    
-    def CalculateShippingCost(self, start, finish): # Kalkulasi Ongkir (Djikstra)
-        distances = {node: float('inf') for node in self.graph}
-        distances[start] = 0
-        predecessors = {node: None for node in self.graph}
-        unvisited = set(self.graph.keys())
-        
-        while unvisited:
-            # Pilih simpul dengan jarak terkecil dari unvisited
-            min_distance = float('inf')
-            current = None
-            for node in unvisited:
-                if distances[node] < min_distance:
-                    min_distance = distances[node]
-                    current = node
-            
-            if current is None:
-                break
-            
-            if current == finish:
-                break
-            
-            unvisited.remove(current)
-            
-            for neighbor, weight in self.graph[current].items():
-                if neighbor in unvisited:
-                    new_distance = distances[current] + weight
-                    if new_distance < distances[neighbor]:
-                        distances[neighbor] = new_distance
-                        predecessors[neighbor] = current
-
-        path = []
-        current = finish
-        while current is not None:
-            path.append(current)
-            current = predecessors[current]
-        path = path[::-1]
-        
-        # Periksa apakah jalur valid
-        if distances[finish] == float('inf'):
-            print(f"Tidak ada jalur dari {start} ke {finish}")
-        
-        return distances[finish], path
 
     def CreateNewTransaction(self, cart):
-        delivery = self.CalculateShippingCost(KECAMATAN.lower(), self.user.Kecamatan.values[0].lower())[0]
+        delivery = CalculateShippingCost(self.graph, KECAMATAN.lower(), self.user.Kecamatan.values[0].lower())[0]
         total = sum(cart['Subtotal'].values) + delivery
         vTotal = sum(cart['SubVolume'].values)
 

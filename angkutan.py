@@ -1,7 +1,107 @@
 import csv
 import pandas as pd
 from tabulate import tabulate
-import os
+from transaction import KECAMATAN, load_graph, CalculateShippingCost
+
+def GrafMST(kecamatan = list):
+    graf = load_graph('kecamatan_graph.json')
+
+    hasil = {v:[] for v in kecamatan}
+    rute = {v:{} for v in kecamatan}
+
+    for i in hasil:
+        for j in kecamatan:
+            if i == j:
+                continue
+
+            hasil[i].append((j, CalculateShippingCost(graf, i, j)[0]))
+            rute[i][j] = CalculateShippingCost(graf, i, j)[1]
+            # hasil[i][j] = CalculateShippingCost(graf, i, j)[0]
+    
+    return hasil
+
+def RuteAngkutan(graph): # Pencarian Rute Pengiriman (Prims)
+    mst = []
+    vertices = graph.keys()
+    visited = set()
+    start_vertex = list(vertices)[0]
+
+    visited.add(start_vertex)
+
+    while len(visited) < len(vertices):
+        min_edge = None
+        min_weight = float('inf')
+
+        for vertex in visited:
+            for neighbor, weight in graph[vertex]:
+                if neighbor not in visited and weight < min_weight:
+                    min_edge = (vertex, neighbor)
+                    min_weight = weight
+
+        if min_edge:
+            mst.append((min_edge[0], min_edge[1], min_weight))
+            visited.add(min_edge[1])
+
+    return mst
+
+def graf_teks(graph):
+    adj = {}
+    for u, v, w in graph:
+        if u not in adj:
+            adj[u] = []
+        if v not in adj:
+            adj[v] = []
+        adj[u].append((v, w))
+        adj[v].append((u, w))
+    
+    lines = []
+    visited_edges = set()
+    
+    # mencari kecamatan dengan tetangga lebih dari 1
+    center = None
+    for node, neighbors in adj.items():
+        if len(neighbors) > 1:
+            center = node
+            break
+    
+    # jika terdapat kecamatan dengan tetangga lebih dari 1
+    if center:
+        for v, w in adj[center]:
+            edge = tuple(sorted([center, v]))
+            if edge not in visited_edges:
+                if len(adj[v]) > 1:
+                    for v2, w2 in adj[v]:
+                        if v2 != center:
+                            lines.append(f"{center} --({w:.1f})--> {v} --({w2:.1f})--> {v2}")
+                            visited_edges.add(tuple(sorted([v, v2])))
+                            break
+                else:
+                    lines.append(f"{center} --({w:.1f})--> {v}")
+                visited_edges.add(edge)
+
+    # jika tidak ada kecamatan dengan tetangga lebih dari 1
+    else:
+        start = None
+        for node, neighbors in adj.items():
+            if len(neighbors) == 1:
+                start = node
+                break
+        
+        current = start
+        line = []
+        while current:
+            line.append(current)
+            next_node = None
+            for neighbor, weight in adj[current]:
+                if tuple(sorted([current, neighbor])) not in visited_edges:
+                    line.append(f"--({weight:.1f})-->")
+                    visited_edges.add(tuple(sorted([current, neighbor])))
+                    next_node = neighbor
+                    break
+            current = next_node
+        lines.append(" ".join(str(x) for x in line))
+    
+    return "\n".join(lines)
 
 def kelola_angkutan():
 
@@ -185,5 +285,16 @@ def kelola_angkutan():
         print("\nTidak ada barang yang bisa dimuat.")
 
     print(f"\nTruk akan berhenti di kecamatan: {', '.join(tujuan_nama)}")
+    
+    # implementasi MST
+
+    
+    rute = [KECAMATAN] + [tujuan.lower() for tujuan in tujuan_nama]
+
+    graf = GrafMST(rute)
+
+    print('Dengan Rute:')
+
+    print(graf_teks(RuteAngkutan(graf)))
 
     input("\nTekan Enter untuk kembali ke menu...")
