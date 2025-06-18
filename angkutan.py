@@ -5,7 +5,6 @@ import os
 
 def kelola_angkutan():
 
-    # Load data truk
     def load_trucks():
         try:
             df = pd.read_csv("dataAngkutan.csv")
@@ -25,7 +24,6 @@ def kelola_angkutan():
             print(f"Error membaca file dataAngkutan.csv: {e}")
             return {}
 
-    # Load material
     def load_materials():
         try:
             df = pd.read_csv("material_dummy.csv")
@@ -44,7 +42,6 @@ def kelola_angkutan():
             print(f"Error membaca file material_dummy.csv: {e}")
             return {}
 
-    # Load data transaksi dan tampilkan
     try:
         trx_df = pd.read_csv("transaction.csv")
         trx_df_display = trx_df[["ID", "Date", "UserID", "Delivery", "VTotal"]]
@@ -54,7 +51,6 @@ def kelola_angkutan():
         print(f"Gagal membaca transaksi: {e}")
         return
 
-    # Input ID transaksi yang dipilih
     try:
         selected_ids = input("\nMasukkan ID transaksi yang ingin diproses (pisahkan dengan koma): ")
         selected_ids = [int(i.strip()) for i in selected_ids.split(",") if i.strip().isdigit()]
@@ -65,23 +61,20 @@ def kelola_angkutan():
         print(f"Input tidak valid: {e}")
         return
 
-    # Load transaksi dan detail
     def load_transactions_and_details(materials, selected_ids):
         try:
             trx_df = pd.read_csv("transaction.csv")
             detail_df = pd.read_csv("detail_transaction.csv")
             kecamatan_df = pd.read_csv("kecamatan.csv")
 
-            # Filter transaksi yang dipilih
             trx_df = trx_df[trx_df["ID"].isin(selected_ids)]
             detail_df = detail_df[detail_df["TransactionID"].isin(selected_ids)]
 
-            # Gabungkan transaksi dan detail
             merged = pd.merge(detail_df, trx_df, left_on="TransactionID", right_on="ID", suffixes=("_detail", "_trx"))
 
             items = []
             tujuan = set()
-            total_volume_calculated = 0  # Tambahkan variabel untuk menghitung total volume
+            total_volume_calculated = 0  
             
             for _, row in merged.iterrows():
                 mat_id = int(float(row["MaterialID"]))
@@ -90,7 +83,7 @@ def kelola_angkutan():
                 tujuan.add(kecamatan_id)
                 if mat_id in materials:
                     volume = materials[mat_id]["volume"]
-                    total_volume_calculated += volume * quantity  # Hitung total volume
+                    total_volume_calculated += volume * quantity  
                     items.append({
                         "name": materials[mat_id]["name"],
                         "value": volume,
@@ -99,7 +92,6 @@ def kelola_angkutan():
                         "kecamatan_id": kecamatan_id
                     })
 
-            # Mapping kecamatan
             tujuan_nama = []
             for kid in tujuan:
                 nama = kecamatan_df[kecamatan_df["ID"] == kid]["Kecamatan"]
@@ -108,27 +100,23 @@ def kelola_angkutan():
                 else:
                     tujuan_nama.append(f"ID_{kid} (tidak ditemukan)")
             
-            return items, tujuan_nama, total_volume_calculated  # Return total volume yang dihitung
+            return items, tujuan_nama, total_volume_calculated  
         except Exception as e:
             print(f"Error load transaksi: {e}")
             return [], [], 0
 
     def bounded_knapsack(items, capacity):
-        """
-        Ambil SEMUA barang sesuai quantity pesanan customer
-        Tidak peduli apakah melebihi kapasitas truk atau tidak
-        """
+        
         selected_items = []
         total_weight = 0
         total_value = 0
         
-        # Ambil SEMUA barang sesuai quantity yang dipesan
         for item in items:
             quantity = int(item["max_quantity"])
             weight_per_unit = item["weight"]
             value_per_unit = item["value"]
             
-            # Tambahkan ke selected items
+            
             selected_items.extend([item["name"]] * quantity)
             total_weight += weight_per_unit * quantity
             total_value += value_per_unit * quantity
@@ -145,13 +133,11 @@ def kelola_angkutan():
         print("Tidak ada data material yang tersedia.")
         return
 
-    # PERBAIKAN: Gunakan fungsi yang mengembalikan total volume yang konsisten
     items, tujuan_nama, total_volume_transaksi = load_transactions_and_details(materials, selected_ids)
     if not items:
         print("Tidak ada data transaksi yang tersedia.")
         return
 
-    # DEBUG: Tampilkan informasi detail item
     print("\n=== DEBUG: Detail Items ===")
     for item in items:
         print(f"- {item['name']}: {item['max_quantity']} unit × {item['value']:.3f} m³ = {item['value'] * item['max_quantity']:.3f} m³")
