@@ -128,11 +128,100 @@ class Transaction:
         self.isAdmin = True if self.user.loc[:, 'Role'].values[0].lower() == 'admin' else False
 
     def ShowAllTransaction(self):
+        transactions = self.data.copy()
+        details = self.detail.copy()
+        materials = self.material.copy()
+        users = GetCsv('user.csv')
+        
+        if transactions.empty or details.empty or materials.empty or users.empty:
+            print("Salah satu file CSV kosong.")
+            return None
+
+        merged_data = details.merge(transactions, left_on="TransactionID", right_on="ID", suffixes=('_detail', '_transaction'))
+
+        # Mendapatkan nama material
+        merged_data = merged_data.merge(materials[['ID', 'Material']], left_on="MaterialID", right_on="ID", suffixes=('', '_material'))
+
+        # Mendapatkan nama user
+        merged_data = merged_data.merge(users[['ID', 'Nama']], left_on="UserID", right_on="ID", suffixes=('', '_user'))
+
+        data = merged_data[['TransactionID', 'Material', 'Quantity', 'Subtotal', 'SubVolume', 'Date', 'Nama', 'Delivery', 'Total', 'VTotal']]
+
+        data['MaterialLower'] = data['Material'].str.lower()
+
+        data = data.sort_values(by='MaterialLower').reset_index(drop=True)
+        daftar_material = data['MaterialLower'].tolist()
+
+        if self.isAdmin:
+            print(tabulate(
+            data[['TransactionID', 'Nama', 'Material', 'Quantity', 'Delivery', 'Subtotal', 'SubVolume']],
+            headers='keys',
+            tablefmt='fancy_grid',
+            showindex=False
+            ))
+            
+            cari = input("\nMasukkan nama Material yang ingin dicari (atau tekan Enter untuk kembali): ").strip().lower()
+
+            if not cari:
+                print("\nKembali ke menu admin...")
+                return
+
+            hasil_index = binary_search(daftar_material, cari)
+
+            if hasil_index != -1:
+                hasil = data.iloc[hasil_index]
+                print("\nData transaksi yang ditemukan:")
+                print(hasil)
+                print(tabulate(
+                    hasil[['TransactionID', 'Material', 'Nama', 'Quantity', 'Delivery', 'Total']],
+                    headers='keys',
+                    tablefmt='fancy_grid',
+                    showindex=False
+                ))
+            else:
+                print("\nMaterial yang kamu cari tidak ditemukan.")
+
+            input("\nTekan Enter untuk kembali ke menu admin...")
+
+        else:
+            print(tabulate(
+            data.loc[data['Nama'] == self.user['Nama'].values[0], ['TransactionID', 'Material', 'Quantity', 'Delivery', 'Subtotal', 'SubVolume']],
+            headers='keys',
+            tablefmt='fancy_grid',
+            showindex=False
+            ))
+            
+            cari = input("\nMasukkan nama Material yang ingin dicari (atau tekan Enter untuk kembali): ").strip().lower()
+
+            if not cari:
+                print("\nKembali ke menu admin...")
+                return
+
+            hasil_index = binary_search(daftar_material, cari)
+            print(hasil_index)
+
+            if hasil_index != -1:
+                hasil = data.iloc[hasil_index]
+                print("\nData transaksi yang ditemukan:")
+                # print(hasil)
+                print(tabulate(
+                    hasil[hasil.Nama==self.user['Nama'].values[0], ['TransactionID', 'Material', 'Quantity', 'Delivery', 'Total']],
+                    headers='keys',
+                    tablefmt='fancy_grid',
+                    showindex=False
+                ))
+            else:
+                print("\nMaterial yang kamu cari tidak ditemukan.")
+
+            input("\nTekan Enter untuk kembali ke menu admin...")
+
+    def ShowAllTransaction1(self):
         data = self.data.copy()
+        detail = self.detail.copy()
 
         # Mapping MaterialID ke Nama Material
         material_dict = dict(zip(self.material['ID'], self.material['Material']))
-        data['Material'] = data['MaterialID'].map(material_dict)
+        detail['Material'] = detail['MaterialID'].map(material_dict)
 
         # Mapping UserID ke Nama User
         user_df = pd.read_csv('user.csv')
@@ -140,18 +229,20 @@ class Transaction:
         data['User'] = data['UserID'].map(user_dict)
 
         # Ubah semua nama material ke huruf kecil untuk pencarian
-        data['MaterialLower'] = data['Material'].str.lower()
+        detail['MaterialLower'] = detail['Material'].str.lower()
 
         # Urutkan berdasarkan nama material (syarat binary search)
-        data = data.sort_values(by='MaterialLower').reset_index(drop=True)
-        daftar_material = data['MaterialLower'].tolist()
+        detail = detail.sort_values(by='MaterialLower').reset_index(drop=True)
+        daftar_material = detail['MaterialLower'].tolist()
 
+        show = pd.merge(detail, data, how='left')
+        show['Subtotal'] = show['Subtotal'].astype('int64')
+        print(show.columns)
         # Tampilkan semua transaksi
         print(tabulate(
-            data[['ID', 'Material', 'User', 'Quantity', 'Delivery', 'Total']],
+            show[['ID', 'User', 'Material', 'Quantity', 'Delivery', 'Subtotal', 'SubVolume']],
             headers='keys',
             tablefmt='fancy_grid',
-            floatfmt='.0f',
             showindex=False
         ))
 
@@ -165,10 +256,11 @@ class Transaction:
         hasil_index = binary_search(daftar_material, cari)
 
         if hasil_index != -1:
-            hasil = data.iloc[hasil_index]
+            hasil = show.iloc[hasil_index]
             print("\nData transaksi yang ditemukan:")
+            print(hasil)
             print(tabulate(
-                hasil[['ID', 'Material', 'User', 'Quantity', 'Delivery', 'Total']],
+                hasil[['TransactionID', 'Material', 'User', 'Quantity', 'Delivery', 'Total']],
                 headers='keys',
                 tablefmt='fancy_grid',
                 showindex=False
@@ -177,7 +269,6 @@ class Transaction:
             print("\nMaterial yang kamu cari tidak ditemukan.")
 
         input("\nTekan Enter untuk kembali ke menu admin...")
-
 
     def SearchDeliveryRoute(self, graph): # Pencarian Rute Pengiriman (Prims)
         mst = []
@@ -315,9 +406,6 @@ class Transaction:
                         subtotal,
                         float(subvolume)
             ]
-
-            print(cart)
-            print(cart.info())
 
             buy = Input('Ada material lain yang ingin dibeli? [Y/n]')
 
