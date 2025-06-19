@@ -11,9 +11,9 @@ ID,Material,Price,Stock,Volume
 10,Genteng Beton Flat,7500,1200,0.0021
 11,Keramik 40x40 cm,45000,450,0.016
 12,Cat Tembok 5kg,60000,245,0.005
-13,Papan Triplek 122x244x12mm,125000,95,0.0357
+13,Papan Triplek 122x244x12mm,125000,100,0.0357
 14,Kayu Balok 5x10x400 cm,80000,55,0.02
-15,Paku 5cm 1kg,15000,185,0.001
-16,Asbes 1.2x2.4m,55000,100,0.0086
+15,Paku 5cm 1kg,15000,165,0.001
+16,Asbes 1.2x2.4m,55000,50,0.0086
 17,Galvalum 0.3mm 3m,68000,155,0.0052
-18,Cat Besi 1kg,40000,195,0.0015
+18,Cat Besi 1kg,40000,190,0.0015

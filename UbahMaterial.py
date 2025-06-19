@@ -89,6 +89,4 @@ def UbahMaterial():
 
     data.to_csv('material_dummy.csv', index=False)
 
-    print(data.info())
-
     print(tabulate(data, headers='keys', tablefmt='fancy_grid', showindex=False))

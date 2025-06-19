@@ -197,7 +197,6 @@ class Transaction:
 
         data['MaterialLower'] = data['Material'].str.lower()
 
-        data = data.sort_values(by='MaterialLower').reset_index(drop=True)
         daftar_material = data['MaterialLower'].tolist()
 
         if self.isAdmin:
@@ -214,7 +213,7 @@ class Transaction:
                 print("\nKembali ke menu admin...")
                 return
 
-            hasil_index = binary_search(daftar_material, cari)
+            hasil_index = binary_search(self.data.Date , cari)
 
             if hasil_index != -1:
                 hasil = data.iloc[hasil_index]
@@ -245,7 +244,7 @@ class Transaction:
                 print("\nKembali ke menu admin...")
                 return
 
-            hasil_index = binary_search(daftar_material, cari)
+            hasil_index = binary_search(self.data.Date , cari)
 
             if hasil_index != -1:
                 hasil = data.loc[hasil_index].copy()
@@ -265,8 +264,6 @@ class Transaction:
         delivery = CalculateShippingCost(self.graph, KECAMATAN.lower(), self.user.Kecamatan.values[0].lower())[0]
         total = sum(cart['Subtotal'].values) + delivery
         vTotal = sum(cart['SubVolume'].values)
-
-        print(total, vTotal, delivery)
         
         self.data.loc[len(self.data)] = [
                 1 if self.data.empty else self.data.loc[len(self.data)-1, 'ID'] + 1,

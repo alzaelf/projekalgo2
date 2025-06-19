@@ -7,6 +7,7 @@ from hapusbarang import hapus_barang
 from tambahmaterial import tambah_material
 from angkutan import kelola_angkutan
 from tabulate import tabulate
+from UbahMaterial import UbahMaterial
 from transaction import Transaction
 
 def hiasan(apa):
@@ -228,8 +229,7 @@ def Menu(role, id_user, nama):
                 5: "Lihat Riwayat Transaksi Customer",
                 6: "Kelola Angkutan",
                 7: "Lihat Data Kecamatan",
-                8: "Tambah Data Kecamatan",
-                9: "Logout"
+                8: "Logout"
                 }
             
             for key, value in menu_admin.items():
@@ -256,7 +256,7 @@ def Menu(role, id_user, nama):
                 print("Logout berhasil. Kembali ke menu utama...")
                 break 
             elif role.lower() == 'admin':
-                transaction.UpdateMaterial()
+                UbahMaterial()
 
         elif pilihan == '5' and role.lower() == 'admin':
                 transaction.ShowAllTransaction()
@@ -268,10 +268,6 @@ def Menu(role, id_user, nama):
                 lihat_kecamatan()
 
         elif pilihan == '8' and role.lower() == 'admin':
-                # tambah_kecamatan(input("Masukkan nama kecamatan baru: ").strip())
-                pass
-
-        elif pilihan == '9' and role.lower() == 'admin':
                 clear_terminal()
                 break
         else:
