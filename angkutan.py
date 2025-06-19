@@ -15,7 +15,6 @@ def GrafMST(kecamatan = list):
 
             hasil[i].append((j, CalculateShippingCost(graf, i, j)[0]))
             rute[i][j] = CalculateShippingCost(graf, i, j)[1]
-            # hasil[i][j] = CalculateShippingCost(graf, i, j)[0]
     
     return hasil
 
@@ -238,5 +237,15 @@ def kelola_angkutan():
         print(f" Efisiensi muatan: {format_koma(total_volume / kapasitas * 100, presisi=1)}%")
 
         print(f"\nTruk akan berhenti di kecamatan: {', '.join(tujuan_nama)}")
+
+        rute = GrafMST([KECAMATAN] + [kec.lower() for kec in tujuan_nama])
+
+        graf = GrafMST(rute)
+
+        print('Dengan Rute:')
+
+        print(graf_teks(RuteAngkutan(graf)))
+
+        
 
     input("\nTekan Enter untuk kembali ke menu...")
