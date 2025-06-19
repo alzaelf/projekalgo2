@@ -193,7 +193,7 @@ class Transaction:
         data = merged_data[['TransactionID', 'Material', 'Quantity', 'Subtotal', 'Date', 'Nama', 'Delivery']]
         
         data = data.copy()
-        data.loc['Subtotal'] = data['Subtotal'].astype(int)
+        data['Subtotal'] = data['Subtotal'].astype(int)
 
         data['MaterialLower'] = data['Material'].str.lower()
 
@@ -202,7 +202,7 @@ class Transaction:
 
         if self.isAdmin:
             print(tabulate(
-            data[['TransactionID', 'Material', 'Nama', 'Quantity', 'Delivery', 'Subtotal']],
+            data[['TransactionID', 'Date','Material', 'Nama', 'Quantity', 'Delivery', 'Subtotal']],
             headers='keys',
             tablefmt='fancy_grid',
             showindex=False
@@ -220,7 +220,7 @@ class Transaction:
                 hasil = data.iloc[hasil_index]
                 print("\nData transaksi yang ditemukan:")
                 print(tabulate(
-                    hasil[['TransactionID', 'Material', 'Nama', 'Quantity', 'Delivery', 'Subtotal']],
+                    hasil[['TransactionID', 'Date', 'Material', 'Nama', 'Quantity', 'Delivery', 'Subtotal']],
                     headers='keys',
                     tablefmt='fancy_grid',
                     showindex=False
@@ -303,6 +303,13 @@ class Transaction:
         
         self.detail = pd.concat([self.detail, cart], axis=0, ignore_index=True)
 
+        cart['ID'] = cart['ID'].astype(int)
+        cart['TransactionID'] = cart['TransactionID'].astype('Int64')
+        cart['MaterialID'] = cart['MaterialID'].astype('Int64')
+        cart['Quantity'] = cart['Quantity'].astype('Int64')
+        cart['Subtotal'] = cart['Subtotal'].astype('Int64')
+        cart['SubVolume'] = cart['SubVolume'].astype(float)
+
         self.data.to_csv(TRANSACTION_FILE, index=False)
         self.detail.to_csv(DETAIL_FILE, index=False)
         self.material.to_csv(MATERIAL_FILE, index=False)
@@ -346,12 +353,12 @@ class Transaction:
 
             cart.loc[len(cart)] = [
                 1 if self.detail.empty and cart.empty\
-                    else self.detail.loc[len(self.detail)-1, 'ID'] + 1 if cart.empty\
-                        else cart.loc[len(cart)-1, 'ID'],
-                        1 if self.data.empty else self.data.loc[len(self.data)-1, 'ID'] + 1,
-                        materialId,
-                        quantity,
-                        subtotal,
+                    else (self.detail.loc[len(self.detail)-1, 'ID']) + 1 if cart.empty\
+                        else int(cart.loc[len(cart)-1, 'ID']),
+                        1 if self.data.empty else int(self.data.loc[len(self.data)-1, 'ID'] + 1),
+                        int(materialId),
+                        int(quantity),
+                        int(subtotal),
                         float(subvolume)
             ]
 
