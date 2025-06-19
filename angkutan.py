@@ -1,4 +1,3 @@
-import csv
 import pandas as pd
 from tabulate import tabulate
 from transaction import KECAMATAN, load_graph, CalculateShippingCost
@@ -104,197 +103,140 @@ def graf_teks(graph):
     return "\n".join(lines)
 
 def kelola_angkutan():
+    
+    def format_koma(angka, presisi=3):
+        return f"{angka:.{presisi}f}".replace('.', ',')
 
     def load_trucks():
         try:
             df = pd.read_csv("dataAngkutan.csv")
-            trucks = {}
-            for _, row in df.iterrows():
-                truck_id = int(row["IDTruck"])
-                trucks[truck_id] = {
+            return {
+                int(row["IDTruck"]): {
                     "nama": row["Nama"],
                     "nopol": row["NoPolisi"],
-                    "kapasitas": int(row["Kapasitas"])
-                }
-            return trucks
-        except FileNotFoundError:
-            print("File dataAngkutan.csv tidak ditemukan.")
-            return {}
+                    "kapasitas": float(row["Kapasitas"])
+                } for _, row in df.iterrows()
+            }
         except Exception as e:
-            print(f"Error membaca file dataAngkutan.csv: {e}")
+            print(f"Gagal membaca data truk: {e}")
             return {}
 
-    def load_materials():
+    def load_transaksi_vtotal():
         try:
-            df = pd.read_csv("material_dummy.csv")
-            materials = {}
-            for _, row in df.iterrows():
-                material_id = int(row["ID"])
-                materials[material_id] = {
-                    "name": row["Material"],
-                    "volume": float(row["Volume"])
-                }
-            return materials
-        except FileNotFoundError:
-            print("File material_dummy.csv tidak ditemukan.")
-            return {}
+            df = pd.read_csv("transaction.csv")
+            return df[["ID", "UserID", "VTotal"]].dropna()
         except Exception as e:
-            print(f"Error membaca file material_dummy.csv: {e}")
-            return {}
+            print(f"Gagal membaca data transaksi: {e}")
+        return pd.DataFrame()
 
-    try:
-        trx_df = pd.read_csv("transaction.csv")
-        trx_df_display = trx_df[["ID", "Date", "UserID", "Delivery", "VTotal"]]
-        print("\n=== Daftar Transaksi yang Tersedia ===")
-        print(tabulate(trx_df_display, headers="keys", tablefmt="grid", showindex=False))
-    except Exception as e:
-        print(f"Gagal membaca transaksi: {e}")
-        return
 
-    try:
-        selected_ids = input("\nMasukkan ID transaksi yang ingin diproses (pisahkan dengan koma): ")
-        selected_ids = [int(i.strip()) for i in selected_ids.split(",") if i.strip().isdigit()]
-        if not selected_ids:
-            print("Tidak ada ID transaksi yang valid.")
-            return
-    except Exception as e:
-        print(f"Input tidak valid: {e}")
-        return
-
-    def load_transactions_and_details(materials, selected_ids):
+    def load_kecamatan():
         try:
-            trx_df = pd.read_csv("transaction.csv")
-            detail_df = pd.read_csv("detail_transaction.csv")
-            kecamatan_df = pd.read_csv("kecamatan.csv")
+            df = pd.read_csv("kecamatan.csv")
+            return df.set_index("ID")["Kecamatan"].to_dict()
+        except Exception as e:
+            print(f"Gagal membaca data kecamatan: {e}")
+            return {}
+        
+    def data_user():
+        try:
+            df = pd.read_csv("user.csv")
+            return df.set_index("ID").to_dict(orient="index")
+        except Exception as e:
+            print(f"Gagal membaca data user: {e}")
+            return {}
+        
+    def knapsack(transactions, capacity):
+        scale = 1000
+        cap = int(capacity * scale)
+        n = len(transactions)
 
-            trx_df = trx_df[trx_df["ID"].isin(selected_ids)]
-            detail_df = detail_df[detail_df["TransactionID"].isin(selected_ids)]
+        weights = (transactions["VTotal"] * scale).astype(int).tolist()
+        values = weights
+        ids = transactions["ID"].tolist()
 
-            merged = pd.merge(detail_df, trx_df, left_on="TransactionID", right_on="ID", suffixes=("_detail", "_trx"))
+        dp = [[0] * (cap + 1) for _ in range(n + 1)]
 
-            items = []
-            tujuan = set()
-            total_volume_calculated = 0  
-            
-            for _, row in merged.iterrows():
-                mat_id = int(float(row["MaterialID"]))
-                quantity = int(float(row["Quantity"]))
-                kecamatan_id = int(row["Delivery"])
-                tujuan.add(kecamatan_id)
-                if mat_id in materials:
-                    volume = materials[mat_id]["volume"]
-                    total_volume_calculated += volume * quantity  
-                    items.append({
-                        "name": materials[mat_id]["name"],
-                        "value": volume,
-                        "weight": volume,
-                        "max_quantity": quantity,
-                        "kecamatan_id": kecamatan_id
-                    })
-
-            tujuan_nama = []
-            for kid in tujuan:
-                nama = kecamatan_df[kecamatan_df["ID"] == kid]["Kecamatan"]
-                if not nama.empty:
-                    tujuan_nama.append(nama.values[0])
+        for i in range(1, n + 1):
+            for w in range(cap + 1):
+                if weights[i - 1] <= w:
+                    dp[i][w] = max(dp[i - 1][w],
+                                   dp[i - 1][w - weights[i - 1]] + values[i - 1])
                 else:
-                    tujuan_nama.append(f"ID_{kid} (tidak ditemukan)")
-            
-            return items, tujuan_nama, total_volume_calculated  
-        except Exception as e:
-            print(f"Error load transaksi: {e}")
-            return [], [], 0
+                    dp[i][w] = dp[i - 1][w]
 
-    def bounded_knapsack(items, capacity):
-        
-        selected_items = []
-        total_weight = 0
-        total_value = 0
-        
-        for item in items:
-            quantity = int(item["max_quantity"])
-            weight_per_unit = item["weight"]
-            value_per_unit = item["value"]
-            
-            
-            selected_items.extend([item["name"]] * quantity)
-            total_weight += weight_per_unit * quantity
-            total_value += value_per_unit * quantity
-        
-        return total_value, selected_items
+        # Rekonstruksi solusi
+        w = cap
+        selected_indexes = []
+        for i in range(n, 0, -1):
+            if dp[i][w] != dp[i - 1][w]:
+                selected_indexes.append(i - 1)
+                w -= weights[i - 1]
 
+        return transactions.iloc[selected_indexes], sum([transactions.iloc[i]["VTotal"] for i in selected_indexes])
+
+    # Mulai proses
     trucks = load_trucks()
     if not trucks:
-        print("Tidak ada data truk yang tersedia.")
+        print("Tidak ada data angkutan.")
         return
 
-    materials = load_materials()
-    if not materials:
-        print("Tidak ada data material yang tersedia.")
-        return
-
-    items, tujuan_nama, total_volume_transaksi = load_transactions_and_details(materials, selected_ids)
-    if not items:
-        print("Tidak ada data transaksi yang tersedia.")
-        return
-
-    print("\n=== DEBUG: Detail Items ===")
-    for item in items:
-        print(f"- {item['name']}: {item['max_quantity']} unit × {item['value']:.3f} m³ = {item['value'] * item['max_quantity']:.3f} m³")
-    print(f"Total volume calculated: {sum(item['value'] * item['max_quantity'] for item in items):.3f} m³")
-    print("==============================")
-
-    trucks_df = pd.DataFrame([
-        {"ID": tid, "Nama": t["nama"], "Nopol": t["nopol"], "Kapasitas (m³)": t["kapasitas"]}
+    print("\n=== Pilih Truk ===")
+    print(tabulate([
+        {"ID": tid, "Nama": t["nama"], "Nopol": t["nopol"], "Kapasitas (m³)": format_koma(t["kapasitas"])}
         for tid, t in trucks.items()
-    ])
+    ], headers="keys", tablefmt="fancy_grid", showindex=False))
 
-    print("\n=== Daftar Truk yang Tersedia ===")
-    print(tabulate(trucks_df, headers="keys", tablefmt="fancy_grid", showindex=False))
-
-    print(f"\nTotal volume seluruh transaksi: {total_volume_transaksi:.2f} m³")
-    print(f"Daftar kecamatan tujuan: {', '.join(tujuan_nama)}")
-
-    # Input pemilihan truk dengan validasi
     try:
-        selected = int(input("\nMasukkan ID truk yang ingin digunakan: "))
-        if selected not in trucks:
-            print("ID truk tidak ditemukan.")
+        selected_id = int(input("\nMasukkan ID angkutan yang ingin digunakan: "))
+        if selected_id not in trucks:
+            print("ID angkutan tidak ditemukan.")
             return
-    except ValueError:
-        print("Input harus berupa angka.")
-        return
-    except KeyboardInterrupt:
-        print("\n Operasi dibatalkan.")
+    except:
+        print("Input tidak valid.")
         return
 
-    capacity = trucks[selected]["kapasitas"]
+    kapasitas = trucks[selected_id]["kapasitas"]
+    print(f"\n Angkutan dipilih: {trucks[selected_id]['nama']} ({trucks[selected_id]['nopol']}), kapasitas {format_koma(kapasitas)} m³")
 
-    # Jalankan bounded knapsack
-    max_val, selected_items = bounded_knapsack(items, capacity)
+    transaksi_df = load_transaksi_vtotal()
+    if transaksi_df.empty:
+        print("Tidak ada data transaksi valid.")
+        return
 
-    print(f"\nTruk terpilih: {trucks[selected]['nama']} ({trucks[selected]['nopol']})")
-    print(f"Total volume termuat: {max_val:.2f} m³ dari kapasitas {capacity} m³")
-    print(f"Efisiensi pemuatan: {(max_val/capacity)*100:.1f}%")
+    kecamatan_dict = load_kecamatan()
+    selected_trx, total_volume = knapsack(transaksi_df, kapasitas)
 
-    if selected_items:
-        print("\nBarang yang dimuat:")
-        for item in set(selected_items):
-            print(f"- {item}: {selected_items.count(item)}")
+    if selected_trx.empty:
+        print("\nTidak ada transaksi yang dapat dimuat.")
     else:
-        print("\nTidak ada barang yang bisa dimuat.")
+        user_data = data_user()
+        
+        trx_display = []
+        tujuan_nama = []
 
-    print(f"\nTruk akan berhenti di kecamatan: {', '.join(tujuan_nama)}")
-    
-    # implementasi MST
+        for _, row in selected_trx.iterrows():
+            user_id = int(row["UserID"])
+            user_info = user_data.get(user_id, {})
+            nama_kec = user_info.get("Kecamatan", "Tidak Diketahui")
 
-    
-    rute = [KECAMATAN] + [tujuan.lower() for tujuan in tujuan_nama]
+            trx_display.append({
+                "ID": int(row["ID"]),
+                "User": user_info.get("Nama", f"User {user_id}"),
+                "Kecamatan": nama_kec,
+                "VTotal (m³)": format_koma(row["VTotal"])
+            })
 
-    graf = GrafMST(rute)
+            if nama_kec not in tujuan_nama:
+                tujuan_nama.append(nama_kec)
 
-    print('Dengan Rute:')
 
-    print(graf_teks(RuteAngkutan(graf)))
+        print("\n=== Transaksi Terpilih untuk Dimuat ===")
+        print(tabulate(trx_display, headers="keys", tablefmt="fancy_grid", showindex=False))
+
+        print(f"\n Total volume termuat: {format_koma(total_volume)} m³ dari kapasitas {format_koma(kapasitas)} m³")
+        print(f" Efisiensi muatan: {format_koma(total_volume / kapasitas * 100, presisi=1)}%")
+
+        print(f"\nTruk akan berhenti di kecamatan: {', '.join(tujuan_nama)}")
 
     input("\nTekan Enter untuk kembali ke menu...")
