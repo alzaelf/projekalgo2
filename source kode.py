@@ -152,18 +152,18 @@ def register():
             print("Password tidak boleh kosong.")
         else:
             break
+        
+    bukadb.loc[len(bukadb)] = [
+        bukadb['ID'].max() + 1 if not bukadb.empty else 1,
+        nama,
+        kecamatan,
+        no_wa,
+        username,
+        password,
+        'Customer'
+    ]
 
-    ID = bukadb['ID'].max() + 1 if not bukadb.empty else 1
-    baru = pd.DataFrame([{
-        'ID': ID,
-        'Nama': nama,
-        'Kecamatan': kecamatan,
-        'Nomor WA': no_wa,
-        'Username': username,
-        'Password': password,
-        'Role': 'Customer'
-    }])
-    baru.to_csv(akun, mode='a', header=not os.path.exists(akun), index=False)
+    bukadb.to_csv(akun, index=False)
     hiasan("Registrasi berhasil")
     input("Tekan enter untuk melanjutkan")
     clear_terminal()
