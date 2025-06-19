@@ -261,30 +261,6 @@ class Transaction:
 
             input("\nTekan Enter untuk kembali ke menu admin...")
 
-    def SearchDeliveryRoute(self, graph): # Pencarian Rute Pengiriman (Prims)
-        mst = []
-        vertices = set(graph.keys())
-        visited = set()
-        start_vertex = list(vertices)[0]
-
-        visited.add(start_vertex)
-
-        while len(visited) < len(vertices):
-            min_edge = None
-            min_weight = float('inf')
-
-            for vertex in visited:
-                for neighbor, weight in graph[vertex]:
-                    if neighbor not in visited and weight < min_weight:
-                        min_edge = (vertex, neighbor)
-                        min_weight = weight
-
-            if min_edge:
-                mst.append((min_edge[0], min_edge[1], min_weight))
-                visited.add(min_edge[1])
-
-        return mst
-
     def CreateNewTransaction(self, cart):
         delivery = CalculateShippingCost(self.graph, KECAMATAN.lower(), self.user.Kecamatan.values[0].lower())[0]
         total = sum(cart['Subtotal'].values) + delivery
@@ -348,7 +324,7 @@ class Transaction:
             
             subtotal = int(material.Price.values[0]) * int(quantity)
             subvolume = float(material.Volume.values[0] * quantity)
-            
+
             self.material.loc[self.material.ID == materialId, 'Stock'] = int(material.Stock.values[0] - quantity)
 
             cart.loc[len(cart)] = [
