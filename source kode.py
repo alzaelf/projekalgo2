@@ -153,7 +153,7 @@ def register():
         else:
             break
         
-    bukadb.loc[len(bukadb)] = [
+    bukadb.loc[len(bukadb) +1] = [
         bukadb['ID'].max() + 1 if not bukadb.empty else 1,
         nama,
         kecamatan,

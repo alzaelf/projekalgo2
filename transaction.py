@@ -274,6 +274,8 @@ class Transaction:
                 vTotal
             ]
         
+        print(f'\n Transaksi anda dengan jumlah Rp {total} berhasil diproses')
+
         self.detail = pd.concat([self.detail, cart], axis=0, ignore_index=True)
 
         cart['ID'] = cart['ID'].astype(int)
@@ -334,6 +336,8 @@ class Transaction:
                         int(subtotal),
                         float(subvolume)
             ]
+
+            print(f'[{self.material.loc[self.material['ID']==materialId, 'Material'].values[0]}] sejumlah {quantity} telah ditambahkan ke keranjang')
 
             buy = Input('Ada material lain yang ingin dibeli? [Y/n]')
 
