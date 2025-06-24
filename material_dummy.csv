@@ -5,15 +5,15 @@ ID,Material,Price,Stock,Volume
 4,Kapur 20kg,35000,135,0.009
 5,Hebel (Bata Ringan AAC),10000,4950,0.012
 6,Pasir Beton 1 m³,150000,120,1.0
-7,Split Koral 1 m³,170000,80,1.0
+7,Split Koral 1 m³,170000,10,1.0
 8,Besi Hollow 4x4,75000,200,0.0036
-9,Genteng Tanah Liat,3500,1500,0.0012
-10,Genteng Beton Flat,8000,1300,0.0021
+9,Genteng Tanah Liat,3500,500,0.0012
+10,Genteng Beton Flat,8000,500,0.0021
 11,Keramik 40x40 cm,45000,430,0.016
 12,Cat Tembok 5kg,60000,211,0.005
 13,Papan Triplek 122x244x12mm,125000,100,0.0357
 14,Kayu Balok 5x10x400 cm,80000,55,0.02
-15,Paku 5cm 1kg,15000,165,0.001
+15,Paku 5cm 1kg,15000,65,0.001
 16,Asbes 1.2x2.4m,55000,50,0.0086
-17,Galvalum 0.3mm 3m,68000,155,0.0052
-18,Cat Besi 1kg,40000,198,0.0015
+17,Galvalum 0.3mm 3m,68000,60,0.0052
+18,Cat Besi 1kg,40000,100,0.0015
