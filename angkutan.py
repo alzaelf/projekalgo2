@@ -104,7 +104,11 @@ def graf_teks(graph):
 def kelola_angkutan():
     
     def format_koma(angka, presisi=3):
-        return f"{angka:.{presisi}f}".replace('.', ',')
+        if angka == int(angka):
+            return f"{int(angka)}"
+        else:
+            return f"{angka:.{presisi}f}".replace('.', ',')
+
 
     def load_trucks():
         try:
@@ -182,9 +186,15 @@ def kelola_angkutan():
 
     print("\n=== Pilih Truk ===")
     print(tabulate([
-        {"ID": tid, "Nama": t["nama"], "Nopol": t["nopol"], "Kapasitas (m³)": format_koma(t["kapasitas"])}
-        for tid, t in trucks.items()
+        {
+            "ID": tid, 
+            "Nama": t["nama"], 
+            "Nopol": t["nopol"], 
+            "Kapasitas (m³)": format_koma(t["kapasitas"])
+        }
+    for tid, t in trucks.items()
     ], headers="keys", tablefmt="fancy_grid", showindex=False))
+
 
     try:
         selected_id = int(input("\nMasukkan ID angkutan yang ingin digunakan: "))
