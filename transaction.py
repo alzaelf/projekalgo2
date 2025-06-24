@@ -225,14 +225,14 @@ class Transaction:
                     showindex=False
                 ))
             else:
-                print("\nMaterial yang kamu cari tidak ditemukan.")
+                print(f"\nTidak ada transaksi yang ditemukan pada tanggal {cari}.")
 
             input("\nTekan Enter untuk kembali ke menu admin...")
 
         else:
             user = str(self.user['Nama'].copy().values[0])
             print(tabulate(
-            data.loc[data['Nama'] == self.user['Nama'].copy().values[0], ['TransactionID', 'Material', 'Quantity', 'Delivery', 'Subtotal']],
+            data.loc[data['Nama'] == self.user['Nama'].copy().values[0], ['TransactionID', 'Date','Material', 'Quantity', 'Delivery', 'Subtotal']],
             headers='keys',
             tablefmt='fancy_grid',
             showindex=False
@@ -250,13 +250,13 @@ class Transaction:
                 hasil = data.loc[hasil_index].copy()
                 print("\nData transaksi yang ditemukan:")
                 print(tabulate(
-                    hasil.loc[hasil['Nama']==self.user['Nama'].copy().values[0], ['TransactionID', 'Material', 'Nama', 'Quantity', 'Delivery', 'Subtotal']],
+                    hasil.loc[hasil['Nama']==self.user['Nama'].copy().values[0], ['TransactionID', 'Date', 'Material', 'Nama', 'Quantity', 'Delivery', 'Subtotal']],
                     headers='keys',
                     tablefmt='fancy_grid',
                     showindex=False
                 ))
             else:
-                print("\nMaterial yang kamu cari tidak ditemukan.")
+                print(f"\nTidak ada transaksi yang ditemukan pada tanggal {cari}.")
 
             input("\nTekan Enter untuk kembali ke menu admin...")
 
