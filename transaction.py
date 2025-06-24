@@ -207,7 +207,7 @@ class Transaction:
             showindex=False
             ))
             
-            cari = input("\nMasukkan nama Material yang ingin dicari (atau tekan Enter untuk kembali): ").strip().lower()
+            cari = input("\nMasukkan Tanggal yang ingin dicari (atau tekan Enter untuk kembali): ").strip().lower()
 
             if not cari:
                 print("\nKembali ke menu admin...")
@@ -238,7 +238,7 @@ class Transaction:
             showindex=False
             ))
             
-            cari = input("\nMasukkan nama Material yang ingin dicari (atau tekan Enter untuk kembali): ").strip().lower()
+            cari = input("\nMasukkan Tanggal yang ingin dicari (atau tekan Enter untuk kembali): ").strip().lower()
 
             if not cari:
                 print("\nKembali ke menu admin...")
