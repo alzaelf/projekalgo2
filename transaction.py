@@ -337,7 +337,7 @@ class Transaction:
                         float(subvolume)
             ]
 
-            print(f'[{self.material.loc[self.material['ID']==materialId, 'Material'].values[0]}] sejumlah {quantity} telah ditambahkan ke keranjang')
+            print(f"[{self.material.loc[self.material['ID']==materialId, 'Material'].values[0]}] sejumlah {quantity} telah ditambahkan ke keranjang")
 
             buy = Input('Ada material lain yang ingin dibeli? [Y/n]')
 
