@@ -101,83 +101,82 @@ def graf_teks(graph):
     
     return "\n".join(lines)
 
-def kelola_angkutan():
-    
-    def format_koma(angka, presisi=3):
+def format_koma(angka, presisi=3):
         if angka == int(angka):
             return f"{int(angka)}"
         else:
             return f"{angka:.{presisi}f}".replace('.', ',')
 
 
-    def load_trucks():
-        try:
-            df = pd.read_csv("dataAngkutan.csv")
-            return {
-                int(row["IDTruck"]): {
-                    "nama": row["Nama"],
-                    "nopol": row["NoPolisi"],
-                    "kapasitas": float(row["Kapasitas"])
-                } for _, row in df.iterrows()
-            }
-        except Exception as e:
-            print(f"Gagal membaca data truk: {e}")
-            return {}
+def load_trucks():
+    try:
+        df = pd.read_csv("dataAngkutan.csv")
+        return {
+            int(row["IDTruck"]): {
+                "nama": row["Nama"],
+                "nopol": row["NoPolisi"],
+                "kapasitas": float(row["Kapasitas"])
+            } for _, row in df.iterrows()
+        }
+    except Exception as e:
+        print(f"Gagal membaca data truk: {e}")
+        return {}
 
-    def load_transaksi_vtotal():
-        try:
-            df = pd.read_csv("transaction.csv")
-            return df[["ID", "UserID", "VTotal"]].dropna()
-        except Exception as e:
-            print(f"Gagal membaca data transaksi: {e}")
-        return pd.DataFrame()
+def load_transaksi_vtotal():
+    try:
+        df = pd.read_csv("transaction.csv")
+        return df[["ID", "UserID", "VTotal"]].dropna()
+    except Exception as e:
+        print(f"Gagal membaca data transaksi: {e}")
+    return pd.DataFrame()
 
 
-    def load_kecamatan():
-        try:
-            df = pd.read_csv("kecamatan.csv")
-            return df.set_index("ID")["Kecamatan"].to_dict()
-        except Exception as e:
-            print(f"Gagal membaca data kecamatan: {e}")
-            return {}
-        
-    def data_user():
-        try:
-            df = pd.read_csv("user.csv")
-            return df.set_index("ID").to_dict(orient="index")
-        except Exception as e:
-            print(f"Gagal membaca data user: {e}")
-            return {}
-        
-    def knapsack(transactions, capacity):
-        scale = 10000
-        cap = int(capacity * scale)
-        n = len(transactions)
+def load_kecamatan():
+    try:
+        df = pd.read_csv("kecamatan.csv")
+        return df.set_index("ID")["Kecamatan"].to_dict()
+    except Exception as e:
+        print(f"Gagal membaca data kecamatan: {e}")
+        return {}
+    
+def data_user():
+    try:
+        df = pd.read_csv("user.csv")
+        return df.set_index("ID").to_dict(orient="index")
+    except Exception as e:
+        print(f"Gagal membaca data user: {e}")
+        return {}
+    
+def knapsack(transactions, capacity):
+    scale = 10000
+    cap = int(capacity * scale)
+    n = len(transactions)
 
-        weights = (transactions["VTotal"] * scale).astype(int).tolist()
-        values = weights
-        ids = transactions["ID"].tolist()
+    weights = (transactions["VTotal"] * scale).astype(int).tolist()
+    values = weights
+    ids = transactions["ID"].tolist()
 
-        dp = [[0] * (cap + 1) for _ in range(n + 1)]
+    dp = [[0] * (cap + 1) for _ in range(n + 1)]
 
-        for i in range(1, n + 1):
-            for w in range(cap + 1):
-                if weights[i - 1] <= w:
-                    dp[i][w] = max(dp[i - 1][w],
-                                   dp[i - 1][w - weights[i - 1]] + values[i - 1])
-                else:
-                    dp[i][w] = dp[i - 1][w]
+    for i in range(1, n + 1):
+        for w in range(cap + 1):
+            if weights[i - 1] <= w:
+                dp[i][w] = max(dp[i - 1][w],
+                                dp[i - 1][w - weights[i - 1]] + values[i - 1])
+            else:
+                dp[i][w] = dp[i - 1][w]
 
-        w = cap
-        selected_indexes = []
-        for i in range(n, 0, -1):
-            if dp[i][w] != dp[i - 1][w]:
-                selected_indexes.append(i - 1)
-                w -= weights[i - 1]
 
-        return transactions.iloc[selected_indexes], sum([transactions.iloc[i]["VTotal"] for i in selected_indexes])
+    w = cap
+    selected_indexes = []
+    for i in range(n, 0, -1):
+        if dp[i][w] != dp[i - 1][w]:
+            selected_indexes.append(i - 1)
+            w -= weights[i - 1]
 
-    # Mulai proses
+    return transactions.iloc[selected_indexes], sum([transactions.iloc[i]["VTotal"] for i in selected_indexes])
+
+def kelola_angkutan():
     trucks = load_trucks()
     if not trucks:
         print("Tidak ada data angkutan.")
