@@ -261,7 +261,7 @@ class Transaction:
             input("\nTekan Enter untuk kembali ke menu admin...")
 
     def CreateNewTransaction(self, cart):
-        delivery = CalculateShippingCost(self.graph, KECAMATAN.lower(), self.user.Kecamatan.values[0].lower())[0]
+        delivery = CalculateShippingCost(self.graph, KECAMATAN.lower(), self.user.Kecamatan.values[0].lower())[0] *10000
         total = sum(cart['Subtotal'].values) + delivery
         vTotal = sum(cart['SubVolume'].values)
         

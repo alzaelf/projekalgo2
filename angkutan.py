@@ -150,7 +150,7 @@ def kelola_angkutan():
             return {}
         
     def knapsack(transactions, capacity):
-        scale = 1000
+        scale = 10000
         cap = int(capacity * scale)
         n = len(transactions)
 
@@ -168,7 +168,6 @@ def kelola_angkutan():
                 else:
                     dp[i][w] = dp[i - 1][w]
 
-        # Rekonstruksi solusi
         w = cap
         selected_indexes = []
         for i in range(n, 0, -1):
